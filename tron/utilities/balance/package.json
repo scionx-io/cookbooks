@@ -1,0 +1,33 @@
+{
+  "name": "@tron/balance-utility",
+  "version": "1.0.0",
+  "description": "TRON wallet balance utility for retrieving TRX and TRC20 token balances",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "tron-balance": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix ."
+  },
+  "keywords": [
+    "tron",
+    "trxbalance",
+    "trc20",
+    "blockchain",
+    "crypto",
+    "wallet"
+  ],
+  "author": "ScionX",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "tronweb": "^5.3.4"
+  },
+  "devDependencies": {
+    "eslint": "^9.37.0",
+    "globals": "^16.4.0"
+  }
+}
