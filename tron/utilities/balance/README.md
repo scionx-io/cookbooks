@@ -5,7 +5,28 @@ Simple, clean utility to check TRON wallet balances (TRX and TRC20 tokens).
 ## Installation
 
 ```bash
+# Clone the repository (if needed)
+git clone https://github.com/ScionX/cookbooks.git
+cd cookbooks/tron/utilities/balance
+
+# Install dependencies
 npm install
+
+# Or using yarn
+yarn install
+
+# Link globally to use as a command-line tool
+yarn link
+```
+
+## Setup
+
+Create a `.env` file in the root directory to store your API key:
+
+```bash
+# .env
+TRONGRID_API_KEY=your-api-key-here
+TRON_WALLET_ADDRESS=TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
 ```
 
 ## Usage
@@ -21,6 +42,9 @@ TRON_WALLET_ADDRESS=TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb node index.js
 
 # With API key (optional, for higher rate limits)
 TRONGRID_API_KEY=your-api-key node index.js TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
+
+# If you have globally linked the package
+tron-balance TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
 ```
 
 ### As a Module
@@ -39,6 +63,7 @@ const usdtBalance = await getTrc20Balance(
   6
 );
 ```
+```
 
 ## Features
 
@@ -49,6 +74,9 @@ const usdtBalance = await getTrc20Balance(
 - ✓ Works as CLI tool or importable module
 - ✓ Proper decimal formatting
 - ✓ BigInt support for large balances
+- ✓ Global installation via yarn link
+- ✓ Environment variable support
+- ✓ Rate limit management with API keys
 
 ## Output Example
 
@@ -108,3 +136,31 @@ Array of popular TRC20 tokens with addresses and decimal info
 - USDD: `TPYmHEhy5n8TCEfYGqW2rPxsghSfzghPDn`
 - TUSD: `TUpMhErZL2fhh4sVNULzmL7sbb8NkK57eX`
 - WBTC: `TXpw8XeWYeTUd4quDskoUqeQPowRh4jY65`
+
+## Development
+
+To contribute to this project:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run linting: `yarn lint` or `npm run lint`
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### Linting
+
+The project uses ESLint for code quality:
+
+```bash
+# Check for linting issues
+yarn lint
+
+# Automatically fix fixable issues
+yarn lint:fix
+```
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
