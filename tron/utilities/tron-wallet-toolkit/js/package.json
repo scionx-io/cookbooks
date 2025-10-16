@@ -1,14 +1,15 @@
 {
-  "name": "@tron/balance-utility",
+  "name": "@tron/wallet-toolkit",
   "version": "1.0.0",
-  "description": "TRON wallet balance utility for retrieving TRX and TRC20 token balances",
+  "description": "TRON wallet toolkit with balance checking and price information for TRX and TRC20 tokens",
   "type": "module",
   "main": "index.js",
   "bin": {
-    "tron-balance": "./index.js"
+    "tron-wallet": "./index.js"
   },
   "scripts": {
     "start": "node index.js",
+    "price": "node price.js",
     "lint": "eslint .",
     "lint:fix": "eslint --fix ."
   },

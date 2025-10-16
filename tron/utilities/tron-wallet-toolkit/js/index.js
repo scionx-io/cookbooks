@@ -24,6 +24,7 @@ const formatBalance = (rawBalance, decimals) => {
 };
 
 async function getTrxBalance(address) {
+  console.log(`getTrxBalance address: ${address}`)
   const balance = await tronWeb.trx.getBalance(address);
   return formatBalance(balance, 6);
 }
@@ -60,6 +61,38 @@ async function getAccountResources(address) {
   };
 }
 
+async function getTokenPrice(token = 'trx') {
+  const url = `https://apilist.tronscanapi.com/api/token/price?token=${token}`;
+  const headers = { accept: 'application/json' };
+  if (config.tronscanApiKey) headers['TRON-PRO-API-KEY'] = config.tronscanApiKey;
+
+  try {
+    const response = await fetch(url, { headers });
+    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.warn(`Warning: Could not fetch price for ${token}: ${error.message}`);
+    return null;
+  }
+}
+
+async function getAllTokenPrices() {
+  const url = `https://apilist.tronscanapi.com/api/getAssetWithPriceList`;
+  const headers = { accept: 'application/json' };
+  if (config.tronscanApiKey) headers['TRON-PRO-API-KEY'] = config.tronscanApiKey;
+
+  try {
+    const response = await fetch(url, { headers });
+    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.warn(`Warning: Could not fetch token price list: ${error.message}`);
+    return null;
+  }
+}
+
 async function checkBalances(address) {
   if (!address || !address.startsWith('T')) throw new Error('Invalid TRON address.');
 
@@ -93,4 +126,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   checkBalances(config.walletAddress);
 }
 
-export { getTrxBalance, getAllTrc20Balances, getAccountResources, checkBalances };
+export { getTrxBalance, getAllTrc20Balances, getAccountResources, checkBalances, getTokenPrice, getAllTokenPrices, tronWeb };

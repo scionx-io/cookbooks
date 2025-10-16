@@ -1,13 +1,13 @@
-# TRON Balance Checker
+# TRON Wallet Toolkit
 
-Simple, clean utility to check TRON wallet balances (TRX and TRC20 tokens).
+Comprehensive toolkit for TRON wallet management with balance checking and price information for TRX and TRC20 tokens.
 
 ## Installation
 
 ```bash
 # Clone the repository (if needed)
 git clone https://github.com/ScionX/cookbooks.git
-cd cookbooks/tron/utilities/balance
+cd cookbooks/tron/utilities/tron-wallet-toolkit
 
 # Install dependencies
 npm install
@@ -44,7 +44,7 @@ TRON_WALLET_ADDRESS=TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb node index.js
 TRONGRID_API_KEY=your-api-key node index.js TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
 
 # If you have globally linked the package
-tron-balance TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
+tron-wallet TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
 ```
 
 ### As a Module
@@ -114,8 +114,58 @@ Get TRC20 token balance (returns formatted string)
 ### `getAccountResources(address)`
 Get account bandwidth and energy info
 
+### `getTokenPrice(token)`
+Get price information for a specific token
+
+### `getTokenPriceUSD(token)`
+Get price in USD for a specific token
+
+### `getTokenValueUSD(balance, token)`
+Calculate the dollar value of a token balance
+
+### `getMultipleTokenPrices(tokens)`
+Get prices for multiple tokens
+
+### `formatPrice(price, currency)`
+Format price with currency symbol
+
 ### `POPULAR_TOKENS`
 Array of popular TRC20 tokens with addresses and decimal info
+
+## Price Information
+
+The price.js module provides access to TRON token price information:
+
+```javascript
+import { getTokenPrice, getTokenPriceUSD, getTokenValueUSD, getMultipleTokenPrices, formatPrice } from './price.js';
+
+// Get TRX price
+const trxPrice = await getTokenPriceUSD('trx');
+console.log(`TRX price: ${trxPrice}`);
+
+// Calculate value of a balance
+const value = await getTokenValueUSD(100, 'usdt');
+console.log(`100 USDT ≈ ${value}`);
+
+// Get prices for multiple tokens
+const prices = await getMultipleTokenPrices(['trx', 'usdt', 'eth']);
+console.log('Token prices:', prices);
+
+// Format price with currency symbol
+console.log(formatPrice(prices.trx)); // Will format based on the price value
+```
+
+## CLI Usage
+
+You can also use the price module directly from the command line:
+
+```bash
+# Check price for TRX
+npm run price trx
+
+# Check price for USDT
+npm run price usdt
+```
 
 ## Environment Variables
 

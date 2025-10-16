@@ -5,7 +5,7 @@ This repository contains various utilities and tools developed by ScionX.
 ## Projects
 
 - TRON utilities
-  - [balance](./tron/utilities/balance/README.md) - TRON wallet balance utility for retrieving TRX and TRC20 token balances
+  - [tron-wallet-toolkit](./tron/utilities/tron-wallet-toolkit/README.md) - TRON wallet toolkit with balance checking and price information for TRX and TRC20 tokens
 
 ## Structure
 
