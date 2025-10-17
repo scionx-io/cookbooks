@@ -28,13 +28,12 @@ jobs:
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Release Please
-        uses: google-github-actions/release-please-action@v4
+        uses: googleapis/release-please-action@v4
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: ruby
           package-name: tron.rb
-          version-file: 'tron/utilities/tron-wallet-toolkit/ruby/lib/tron/version.rb'
           path: tron/utilities/tron-wallet-toolkit/ruby
 
       - name: Install dependencies
