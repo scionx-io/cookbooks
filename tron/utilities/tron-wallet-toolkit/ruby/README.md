@@ -1,35 +1,39 @@
-# TRON Wallet Toolkit (Ruby)
+# TRON Ruby Client
 
-Comprehensive toolkit for TRON wallet management with balance checking and price information for TRX and TRC20 tokens in Ruby.
+A Ruby gem for interacting with the TRON blockchain to check wallet balances and related information.
 
 ## Installation
 
 ```bash
-# Navigate to the Ruby directory
-cd /path/to/tron-wallet-toolkit/ruby
-
-# Install dependencies
-gem install bundler
-bundle install
-
-# Or install dotenv directly
-gem install dotenv
+gem install tron
 ```
 
-## Setup
+Or add to your Gemfile:
 
-Create a `.env` file in the root directory to store your API key:
+```ruby
+gem 'tron'
+```
 
+## Configuration
+
+You can configure the client using environment variables or programmatically:
+
+#### Using Environment Variables:
 ```bash
-# .env
-TRONGRID_API_KEY=your-api-key-here
-TRONSCAN_API_KEY=your-tronscan-api-key-here
-# TRON Private Key (only needed if you plan to make transactions)
-# Keep this secure and never commit to version control
-TRON_PRIVATE_KEY=your-private-key-here
+export TRONGRID_API_KEY=your_api_key
+export TRONSCAN_API_KEY=your_tronscan_api_key
+```
 
-# Example TRON wallet address for testing (optional)
-TRON_WALLET_ADDRESS=TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
+#### Using Code:
+```ruby
+require 'tron'
+
+Tron.configure do |config|
+  config.api_key = 'your_trongrid_api_key'
+  config.tronscan_api_key = 'your_tronscan_api_key'
+  config.network = :mainnet  # or :shasta or :nile
+  config.timeout = 30
+end
 ```
 
 ## Usage
@@ -37,45 +41,58 @@ TRON_WALLET_ADDRESS=TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
 ### Command Line
 
 ```bash
-# Pass address as argument
-ruby main.rb TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
-
-# Or use environment variable
-TRON_WALLET_ADDRESS=TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb ruby main.rb
+# Use the CLI tool to check wallet balances
+ruby bin/tron-wallet TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
 ```
 
-### Balance Service
+### As a Library
 
-```bash
-# Get wallet balance as JSON
-ruby balance-service.rb TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
-```
-
-### Token Prices
-
-```bash
-# Get price for TRX
-ruby price.rb trx
-
-# Get price for USDT
-ruby price.rb usdt
-```
-
-### As a Module
-
+#### Initialize Client:
 ```ruby
-require_relative './main'
+require 'tron'
 
-# Check all balances
-TronWalletFunctions.check_balances('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
+# Use default configuration (loads from ENV)
+client = Tron::Client.new
 
-# Get specific balances
-trx_balance = TronWalletFunctions.get_trx_balance('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
-trc20_balances = TronWalletFunctions.get_all_trc20_balances('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
+# Or with custom configuration
+client = Tron::Client.new(
+  api_key: 'your_trongrid_api',
+  tronscan_api_key: 'your_tronscan_api',
+  network: :mainnet,
+  timeout: 30
+)
+```
 
-# Token prices
-token_price = TokenPriceFunctions.get_token_price('trx')
-token_price_usd = TokenPriceFunctions.get_token_price_usd('trx')
+#### Get TRX Balance:
+```ruby
+trx_balance = client.balance_service.get_trx('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
+```
+
+#### Get TRC20 Token Balances:
+```ruby
+tokens = client.balance_service.get_trc20_tokens('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
+```
+
+#### Get Account Resources:
+```ruby
+resources = client.resources_service.get('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
+```
+
+#### Get Token Prices:
+```ruby
+price = client.price_service.get_token_price('trx')
+usd_price = client.price_service.get_token_price_usd('trx')
+```
+
+#### Get Complete Wallet Information:
+```ruby
+wallet_info = client.get_wallet_balance('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
+full_info = client.get_full_account_info('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
+```
+#### Get Complete Wallet Information:
+```ruby
+wallet_info = client.get_wallet_balance('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
+full_info = client.get_full_account_info('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
 ```
 
 ## Features
@@ -83,12 +100,41 @@ token_price_usd = TokenPriceFunctions.get_token_price_usd('trx')
 - ✓ TRX balance
 - ✓ TRC20 token balances (USDT, USDC, USDD, TUSD, WBTC)
 - ✓ Account resources (bandwidth & energy)
+- ✓ Token prices
+- ✓ Portfolio tracking
+- ✓ Multi-network support (mainnet, shasta, nile)
 - ✓ Clean, simple output
-- ✓ Works as CLI tool or importable module
 - ✓ Proper decimal formatting
-- ✓ Integer support for balances
 - ✓ Environment variable support
 - ✓ Rate limit management with API keys
+
+## Services Architecture
+
+The gem is organized into modular services:
+
+- `Tron::Services::Balance` - TRX and TRC20 token balances
+- `Tron::Services::Resources` - Account resources (bandwidth/energy)
+- `Tron::Services::Price` - Token price information
+- `Tron::Utils::HTTP` - HTTP client with error handling
+- `Tron::Utils::Address` - TRON address validation and conversion
+
+## API Reference
+
+### Balance Service
+- `get_trx(address)` - Get TRX balance
+- `get_trc20_tokens(address)` - Get all TRC20 token balances
+- `get_all(address)` - Get all balance information
+
+### Resources Service
+- `get(address)` - Get account resources (bandwidth, energy)
+
+### Price Service
+- `get_token_price(token)` - Get price information for a token
+- `get_all_prices()` - Get prices for all tokens
+- `get_token_price_usd(token)` - Get price in USD
+- `get_token_value_usd(balance, token)` - Calculate dollar value
+- `get_multiple_token_prices(tokens)` - Get multiple token prices
+- `format_price(price, currency)` - Format price with currency
 
 ## Output Example
 
@@ -112,63 +158,10 @@ Account Resources:
 ════════════════════════════════════════════════════════════
 ```
 
-## API Reference
-
-### `TronWalletFunctions.check_balances(address)`
-Check all balances and display formatted output
-
-### `TronWalletFunctions.get_trx_balance(address)`
-Get TRX balance (returns formatted string)
-
-### `TronWalletFunctions.get_all_trc20_balances(address)`
-Get all TRC20 token balances
-
-### `TronWalletFunctions.get_account_resources(address)`
-Get account bandwidth and energy info
-
-### `TokenPriceFunctions.get_token_price(token)`
-Get price information for a specific token
-
-### `TokenPriceFunctions.get_token_price_usd(token)`
-Get price in USD for a specific token
-
-### `TokenPriceFunctions.get_token_value_usd(balance, token)`
-Calculate the dollar value of a token balance
-
-### `TokenPriceFunctions.get_multiple_token_prices(tokens)`
-Get prices for multiple tokens
-
-### `TokenPriceFunctions.format_price(price, currency)`
-Format price with currency symbol
-
-## Price Information
-
-The price.rb module provides access to TRON token price information:
-
-```ruby
-require_relative './price'
-
-# Get TRX price
-trx_price = TokenPriceFunctions.get_token_price_usd('trx')
-puts "TRX price: #{trx_price}"
-
-# Calculate value of a balance
-value = TokenPriceFunctions.get_token_value_usd(100, 'usdt')
-puts "100 USDT ≈ #{value}"
-
-# Get prices for multiple tokens
-prices = TokenPriceFunctions.get_multiple_token_prices(['trx', 'usdt', 'eth'])
-puts "Token prices: #{prices}"
-
-# Format price with currency symbol
-puts TokenPriceFunctions.format_price(prices['trx']) # Will format based on the price value
-```
-
 ## Environment Variables
 
 - `TRONGRID_API_KEY` - TronGrid API key (optional, increases rate limits)
 - `TRONSCAN_API_KEY` - Tronscan API key (optional, increases rate limits)
-- `TRON_WALLET_ADDRESS` - Default wallet address to check
 
 ## Getting an API Key
 

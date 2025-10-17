@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/tron'
+
+def format_number(num)
+  num.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\1,').reverse
+end
+
+def check_balances(address)
+  raise ArgumentError, 'Invalid TRON address.' if address.empty? || !address.start_with?('T')
+
+  client = Tron::Client.new
+
+  puts '═' * 60
+  puts 'TRON WALLET BALANCE CHECKER'
+  puts '═' * 60
+  puts "Wallet: #{address}\n\n"
+
+  puts 'TRX Balance:'
+  trx_balance = client.balance_service.get_trx(address)
+  puts "  #{trx_balance} TRX\n\n"
+
+  puts 'TRC20 Token Balances:'
+  tokens = client.balance_service.get_trc20_tokens(address)
+  if tokens.empty?
+    puts '  (No token balances found)'
+  else
+    tokens.each { |t| puts "  #{t[:symbol].ljust(10)} #{sprintf("%.#{t[:decimals]}f", t[:balance])}" }
+  end
+
+  puts "\nAccount Resources:"
+  res = client.resources_service.get(address)
+  puts "  Bandwidth: #{format_number(res[:bandwidth]).ljust(15)} / #{format_number(res[:bandwidthLimit])}"
+  puts "  Energy:    #{format_number(res[:energy]).ljust(15)} / #{format_number(res[:energyLimit])}"
+  puts '═' * 60
+end
+
+wallet_address = ARGV[0]
+if wallet_address.nil? || wallet_address.empty?
+  puts 'Error: No wallet address provided.'
+  puts 'Usage: ruby bin/tron-wallet <TRON_WALLET_ADDRESS>'
+  exit 1
+end
+
+begin
+  check_balances(wallet_address)
+rescue => e
+  puts "Error: #{e.message}"
+  exit 1
+end
