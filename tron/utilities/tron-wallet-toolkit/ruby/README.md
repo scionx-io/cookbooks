@@ -89,11 +89,6 @@ usd_price = client.price_service.get_token_price_usd('trx')
 wallet_info = client.get_wallet_balance('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
 full_info = client.get_full_account_info('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
 ```
-#### Get Complete Wallet Information:
-```ruby
-wallet_info = client.get_wallet_balance('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
-full_info = client.get_full_account_info('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
-```
 
 ## Features
 
