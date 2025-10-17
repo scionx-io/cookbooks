@@ -48,3 +48,4 @@ package-lock.json
 dist/
 build/
 .nyc_output/
+QWEN.md
