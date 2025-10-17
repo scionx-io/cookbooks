@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require_relative './tron_wallet_toolkit'
+require_relative './main'
 
 if __FILE__ == $0
   wallet_address = ARGV[0]
@@ -11,7 +11,8 @@ if __FILE__ == $0
   end
 
   begin
-    balance_result = TronWalletFunctions.get_wallet_balance(wallet_address)
+    toolkit = TronWalletToolkit.new
+    balance_result = toolkit.get_wallet_balance(wallet_address)
     puts JSON.pretty_generate(balance_result)
   rescue => e
     puts "Error: #{e.message}"

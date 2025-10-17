@@ -3,6 +3,8 @@
 require 'json'
 require 'net/http'
 require 'uri'
+require 'base58'
+require 'digest'
 require 'dotenv/load' if File.exist?('.env')
 
 class TronWalletToolkit
@@ -77,29 +79,138 @@ class TronWalletToolkit
   end
 
   def get_account_resources(address)
+    # Using the same approach as TronWeb - get account resources info
     uri = URI("#{@tron_web_url}/wallet/getaccountresource")
-    uri.query = URI.encode_www_form(address: address)
     
     headers = {}
     headers['TRON-PRO-API-KEY'] = @api_key if @api_key
+    headers['Content-Type'] = 'application/json'
+    
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    
+    # Use POST request with JSON body as TronWeb does, with visible flag
+    request = Net::HTTP::Post.new(uri.request_uri, headers)
+    request.body = { "address" => address, "visible" => true }.to_json
+    response = http.request(request)
+    
+    if response.code == '200'
+      data = JSON.parse(response.body)
+      
+      # Check if there's an error in the response instead of data
+      if data.key?('Error')
+        puts "API returned error: #{data['Error']}"
+        return {
+          bandwidth: 0,
+          bandwidth_limit: 0,
+          energy: 0,
+          energy_limit: 0,
+          storage: 0,
+          storage_limit: 0,
+          total_free_bandwidth: 0,
+          total_free_bandwidth_limit: 0
+        }
+      end
+      
+      # The response structure from getaccountresource endpoint has direct fields (not in a 'data' array)
+      # Extract resource info from the response structure
+      free_net_limit = data['freeNetLimit']&.to_i || 0
+      free_net_used = data['freeNetUsed']&.to_i || 0
+      total_net_limit = data['TotalNetLimit']&.to_i || 0
+      energy_limit = data['EnergyLimit']&.to_i || 0
+      energy_used = data['EnergyUsed']&.to_i || 0
+      
+      # Calculate available resources
+      # For foundation/exchange wallets, there might not be usage data, only limits
+      available_bandwidth = [0, free_net_limit - free_net_used].max
+      available_energy = [0, energy_limit - energy_used].max
+      available_total_net = [0, total_net_limit].max  # For foundation wallets, usage might not be tracked separately
+      
+      # Storage fields - these might not always be in the getaccountresource response
+      # The getaccountresource response might not contain all fields for all account types
+      {
+        bandwidth: available_bandwidth,
+        bandwidthLimit: free_net_limit,
+        energy: available_energy,
+        energyLimit: energy_limit,
+        storage: 0,  # Storage might need to come from getaccount call
+        storageLimit: 0,
+        totalFreeBandwidth: available_total_net,
+        totalFreeBandwidthLimit: total_net_limit
+      }
+    else
+      # Log the error for debugging
+      puts "getaccountresource API Error: #{response.code} - #{response.body}"
+      # If getaccountresource fails, try getaccount endpoint
+      get_account_resources_fallback(address)
+    end
+  rescue => e
+    # If both fail, return zeros and log the error
+    puts "Error getting account resources: #{e.message}"
+    {
+      bandwidth: 0,
+      bandwidth_limit: 0,
+      energy: 0,
+      energy_limit: 0,
+      storage: 0,
+      storage_limit: 0,
+      total_free_bandwidth: 0,
+      total_free_bandwidth_limit: 0
+    }
+  end
+
+  # Fallback method to get resources from getaccount endpoint
+  def get_account_resources_fallback(address)
+    uri = URI("#{@tron_web_url}/wallet/getaccount")
+    
+    headers = {}
+    headers['TRON-PRO-API-KEY'] = @api_key if @api_key
+    headers['Content-Type'] = 'application/json'
     
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     
     request = Net::HTTP::Post.new(uri.request_uri, headers)
-    request.body = { address: address }.to_json
+    request.body = { "address" => address, "visible" => true }.to_json
     response = http.request(request)
     
     if response.code == '200'
       data = JSON.parse(response.body)
+      
+      # Extract resource info from account data
+      account_data = data['data']&.first || {}
+      
+      # Get resource usage from the account data
+      free_net_limit = account_data['freeNetLimit']&.to_i || 0
+      free_net_used = account_data['freeNetUsed']&.to_i || 0
+      energy_limit = account_data['EnergyLimit']&.to_i || 0
+      energy_used = account_data['EnergyUsed']&.to_i || 0
+      storage_limit = account_data['StorageLimit']&.to_i || 0
+      storage_used = account_data['StorageUsed']&.to_i || 0
+      
       {
-        bandwidth: (data['freeNetLimit'] || 0) - (data['freeNetUsed'] || 0),
-        bandwidth_limit: data['freeNetLimit'] || 0,
-        energy: (data['EnergyLimit'] || 0) - (data['EnergyUsed'] || 0),
-        energy_limit: data['EnergyLimit'] || 0
+        bandwidth: [0, free_net_limit - free_net_used].max,
+        bandwidthLimit: free_net_limit,
+        energy: [0, energy_limit - energy_used].max,
+        energyLimit: energy_limit,
+        storage: [0, storage_limit - storage_used].max,
+        storageLimit: storage_limit,
+        totalFreeBandwidth: 0,
+        totalFreeBandwidthLimit: 0
       }
     else
-      raise "API Error: #{response.code}"
+      puts "getaccount API Error: #{response.code} - #{response.body}"
+      # If both methods fail, return zeros
+      {
+        bandwidth: 0,
+        bandwidth_limit: 0,
+        energy: 0,
+        energy_limit: 0,
+        storage: 0,
+        storage_limit: 0,
+        total_free_bandwidth: 0,
+        total_free_bandwidth_limit: 0
+      }
     end
   end
 
@@ -165,13 +276,13 @@ class TronWalletToolkit
     if tokens.empty?
       puts '  (No token balances found)'
     else
-      tokens.each { |t| puts "  #{t[:symbol].ljust(10)} #{t[:balance].round(t[:decimals]).to_s}" }
+      tokens.each { |t| puts "  #{t[:symbol].ljust(10)} #{sprintf("%.#{t[:decimals]}f", t[:balance])}" }
     end
 
     puts "\nAccount Resources:"
     res = get_account_resources(address)
-    puts "  Bandwidth: #{format_number(res[:bandwidth])} / #{format_number(res[:bandwidth_limit])}"
-    puts "  Energy:    #{format_number(res[:energy])} / #{format_number(res[:energy_limit])}"
+    puts "  Bandwidth: #{format_number(res[:bandwidth]).ljust(15)} / #{format_number(res[:bandwidthLimit])}"
+    puts "  Energy:    #{format_number(res[:energy]).ljust(15)} / #{format_number(res[:energyLimit])}"
     puts '═' * 60
   end
 
@@ -236,6 +347,11 @@ module TronWalletFunctions
   def self.get_all_token_prices
     toolkit = TronWalletToolkit.new
     toolkit.get_all_token_prices
+  end
+
+  def self.get_wallet_balance(address)
+    toolkit = TronWalletToolkit.new
+    toolkit.get_wallet_balance(address)
   end
 
   def self.check_balances(address)

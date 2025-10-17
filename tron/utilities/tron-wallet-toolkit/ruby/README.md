@@ -38,10 +38,10 @@ TRON_WALLET_ADDRESS=TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
 
 ```bash
 # Pass address as argument
-ruby tron_wallet_toolkit.rb TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
+ruby main.rb TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb
 
 # Or use environment variable
-TRON_WALLET_ADDRESS=TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb ruby tron_wallet_toolkit.rb
+TRON_WALLET_ADDRESS=TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb ruby main.rb
 ```
 
 ### Balance Service
@@ -64,7 +64,7 @@ ruby price.rb usdt
 ### As a Module
 
 ```ruby
-require_relative './tron_wallet_toolkit'
+require_relative './main'
 
 # Check all balances
 TronWalletFunctions.check_balances('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
