@@ -25,12 +25,15 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
+        working-directory: tron/utilities/tron-wallet-toolkit/ruby
         bundler-cache: true
 
     - name: Install dependencies
+      working-directory: tron/utilities/tron-wallet-toolkit/ruby
       run: |
         bundle install
 
     - name: Run tests
+      working-directory: tron/utilities/tron-wallet-toolkit/ruby
       run: |
         bundle exec rake test
