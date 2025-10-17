@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'tron.rb-v*'
+      - 'v*'
 
 permissions:
   contents: write
