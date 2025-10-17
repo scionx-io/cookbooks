@@ -90,6 +90,20 @@ wallet_info = client.get_wallet_balance('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
 full_info = client.get_full_account_info('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
 ```
 
+#### Get Wallet Portfolio with USD Values:
+```ruby
+# Get wallet portfolio with balances, USD prices, and total value
+portfolio = client.get_wallet_portfolio('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb')
+
+# Include tokens with zero balance
+portfolio = client.get_wallet_portfolio('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb', include_zero_balances: true)
+
+puts "Total Portfolio Value: $#{portfolio[:total_value_usd]}"
+portfolio[:tokens].each do |token|
+  puts "#{token[:symbol]}: #{token[:balance]} ($#{token[:value_usd]})"
+end
+```
+
 ## Features
 
 - ✓ TRX balance
