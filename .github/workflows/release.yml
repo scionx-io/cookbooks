@@ -5,6 +5,10 @@ on:
     branches:
       - master
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   release:
     name: Release to RubyGems
@@ -32,9 +36,8 @@ jobs:
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: ruby
-          package-name: tron.rb
-          path: tron/utilities/tron-wallet-toolkit/ruby
+          config-file: .release-please-config.json
+          manifest-file: .release-please-manifest.json
 
       - name: Install dependencies
         if: ${{ steps.release.outputs.release_created }}
