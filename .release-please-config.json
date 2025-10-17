@@ -1,0 +1,10 @@
+{
+  "packages": {
+    "tron/utilities/tron-wallet-toolkit/ruby": {
+      "release-type": "ruby",
+      "package-name": "tron.rb",
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "lib/tron/version.rb"
+    }
+  }
+}
