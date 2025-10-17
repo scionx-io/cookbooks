@@ -20,11 +20,11 @@ PLATFORMS
 
 DEPENDENCIES
   base58
-  bundler (~> 2.0)
+  bundler (~> 2.4)
   dotenv (~> 2.8)
   minitest (~> 5.0)
   minitest-reporters (~> 1.4)
   rake (~> 13.0)
 
 BUNDLED WITH
-   2.7.2
+   2.4.22
