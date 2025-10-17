@@ -19,6 +19,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           working-directory: tron/utilities/tron-wallet-toolkit/ruby
+          ruby-version: 2.7
           bundler-cache: true
 
       - name: Setup git user
