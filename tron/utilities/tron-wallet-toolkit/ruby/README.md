@@ -194,7 +194,7 @@ bundle exec rake test
 This project uses GitHub Actions to automate releases:
 1. Commits following Conventional Commits format trigger release PRs
 2. Release PRs are automatically created and must be manually reviewed and merged
-3. Once merged to main, the gem is automatically built and published to RubyGems
+3. Once merged to master, the gem is automatically built and published to RubyGems
 
 ## License
 
