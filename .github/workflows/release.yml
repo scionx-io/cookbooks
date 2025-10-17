@@ -2,12 +2,11 @@ name: Release
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - 'tron.rb-v*'
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   release:
@@ -16,8 +15,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -26,39 +23,22 @@ jobs:
           ruby-version: 2.7
           bundler-cache: true
 
-      - name: Setup git user
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-
-      - name: Release Please
-        uses: googleapis/release-please-action@v4
-        id: release
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          config-file: .release-please-config.json
-          manifest-file: .release-please-manifest.json
-
       - name: Install dependencies
-        if: ${{ steps.release.outputs.release_created }}
         working-directory: tron/utilities/tron-wallet-toolkit/ruby
         run: |
           bundle install
 
       - name: Run tests
-        if: ${{ steps.release.outputs.release_created }}
         working-directory: tron/utilities/tron-wallet-toolkit/ruby
         run: |
           bundle exec rake test
 
       - name: Build gem
-        if: ${{ steps.release.outputs.release_created }}
         working-directory: tron/utilities/tron-wallet-toolkit/ruby
         run: |
           gem build tron.gemspec
 
       - name: Push gem to RubyGems
-        if: ${{ steps.release.outputs.release_created }}
         working-directory: tron/utilities/tron-wallet-toolkit/ruby
         run: |
           mkdir -p $HOME/.gem
@@ -68,3 +48,9 @@ jobs:
           gem push *.gem
         env:
           RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: tron/utilities/tron-wallet-toolkit/ruby/*.gem
+          generate_release_notes: true
