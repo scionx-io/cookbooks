@@ -5,13 +5,13 @@ A Ruby gem for interacting with the TRON blockchain to check wallet balances and
 ## Installation
 
 ```bash
-gem install tron
+gem install tron.rb
 ```
 
 Or add to your Gemfile:
 
 ```ruby
-gem 'tron'
+gem 'tron.rb'
 ```
 
 ## Configuration
@@ -172,6 +172,29 @@ Account Resources:
 - USDD: `TPYmHEhy5n8TCEfYGqW2rPxsghSfzghPDn`
 - TUSD: `TUpMhErZL2fhh4sVNULzmL7sbb8NkK57eX`
 - WBTC: `TXpw8XeWYeTUd4quDskoUqeQPowRh4jY65`
+
+## Contributing
+
+We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification for commit messages. This enables automated release notes and semantic versioning.
+We use Minitest for testing.
+
+### Commit Message Format
+- `fix: ...` for bug fixes (triggers PATCH release)
+- `feat: ...` for new features (triggers MINOR release)
+- `feat!: ...` or `BREAKING CHANGE: ...` for breaking changes (triggers MAJOR release)
+
+### Running Tests
+```bash
+bundle install
+bundle exec rake test
+```
+
+## Automated Releases
+
+This project uses GitHub Actions to automate releases:
+1. Commits following Conventional Commits format trigger release PRs
+2. Release PRs are automatically created and must be manually reviewed and merged
+3. Once merged to main, the gem is automatically built and published to RubyGems
 
 ## License
 

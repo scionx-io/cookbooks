@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    name: Release to RubyGems
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Setup git user
+        run: |
+          git config --global user.name "${{ secrets.GITHUB_ACTOR }}"
+          git config --global user.email "${{ secrets.GITHUB_ACTOR_ID }}+${{ secrets.GITHUB_ACTOR }}@users.noreply.github.com"
+
+      - name: Release Please
+        uses: google-github-actions/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: ruby
+          package-name: tron.rb
+          version-file: 'lib/tron/version.rb'
+
+      - name: Install dependencies
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          bundle install
+
+      - name: Run tests
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          bundle exec rake test
+
+      - name: Build gem
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          gem build tron.gemspec
+
+      - name: Push gem to RubyGems
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          mkdir -p $HOME/.gem
+          touch $HOME/.gem/credentials
+          chmod 0600 $HOME/.gem/credentials
+          printf -- "---\n:rubygems_api_key: ${RUBYGEMS_API_KEY}\n" > $HOME/.gem/credentials
+          gem push *.gem
+        env:
+          RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
