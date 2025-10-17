@@ -100,7 +100,7 @@ portfolio = client.get_wallet_portfolio('TWd4WrZ9wn84f5x1hZhL4DHvk738ns5jwb', in
 
 puts "Total Portfolio Value: $#{portfolio[:total_value_usd]}"
 portfolio[:tokens].each do |token|
-  puts "#{token[:symbol]}: #{token[:balance]} ($#{token[:value_usd]})"
+  puts "#{token[:symbol]}: #{token[:token_balance]} ($#{token[:usd_value]})"
 end
 ```
 
