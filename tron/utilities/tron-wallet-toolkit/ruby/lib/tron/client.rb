@@ -80,11 +80,11 @@ module Tron
         tokens << {
           symbol: 'TRX',
           name: 'Tronix',
-          balance: trx_balance,
+          token_balance: trx_balance,
           decimals: 6,
           address: nil,
           price_usd: trx_price,
-          value_usd: trx_price ? (trx_balance * trx_price).round(2) : nil
+          usd_value: trx_price ? (trx_balance * trx_price).round(2) : nil
         }
       end
 
@@ -94,24 +94,24 @@ module Tron
 
         # Get USD price for this token
         price_usd = price_service.get_token_price_usd(token[:symbol].downcase)
-        value_usd = price_usd ? (token[:balance] * price_usd).round(2) : nil
+        usd_value = price_usd ? (token[:balance] * price_usd).round(2) : nil
 
         tokens << {
           symbol: token[:symbol],
           name: token[:name],
-          balance: token[:balance],
+          token_balance: token[:balance],
           decimals: token[:decimals],
           address: token[:address],
           price_usd: price_usd,
-          value_usd: value_usd
+          usd_value: usd_value
         }
       end
 
       # Step 4: Calculate total portfolio value
-      total_value_usd = tokens.sum { |t| t[:value_usd] || 0 }
+      total_value_usd = tokens.sum { |t| t[:usd_value] || 0 }
 
       # Step 5: Sort by value (highest first)
-      tokens.sort_by! { |t| -(t[:value_usd] || 0) }
+      tokens.sort_by! { |t| -(t[:usd_value] || 0) }
 
       {
         address: address,
