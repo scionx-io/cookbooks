@@ -65,6 +65,61 @@ module Tron
       }
     end
 
+    def get_wallet_portfolio(address, include_zero_balances: false)
+      validate_address!(address)
+
+      # Step 1: Get all balances (TRX + TRC20)
+      wallet_data = get_wallet_balance(address)
+
+      tokens = []
+
+      # Step 2: Process TRX (native token)
+      trx_balance = wallet_data[:trx_balance].to_f
+      if trx_balance > 0 || include_zero_balances
+        trx_price = price_service.get_token_price_usd('trx')
+        tokens << {
+          symbol: 'TRX',
+          name: 'Tronix',
+          balance: trx_balance,
+          decimals: 6,
+          address: nil,
+          price_usd: trx_price,
+          value_usd: trx_price ? (trx_balance * trx_price).round(2) : nil
+        }
+      end
+
+      # Step 3: Process TRC20 tokens
+      wallet_data[:trc20_tokens].each do |token|
+        next if token[:balance] <= 0 && !include_zero_balances
+
+        # Get USD price for this token
+        price_usd = price_service.get_token_price_usd(token[:symbol].downcase)
+        value_usd = price_usd ? (token[:balance] * price_usd).round(2) : nil
+
+        tokens << {
+          symbol: token[:symbol],
+          name: token[:name],
+          balance: token[:balance],
+          decimals: token[:decimals],
+          address: token[:address],
+          price_usd: price_usd,
+          value_usd: value_usd
+        }
+      end
+
+      # Step 4: Calculate total portfolio value
+      total_value_usd = tokens.sum { |t| t[:value_usd] || 0 }
+
+      # Step 5: Sort by value (highest first)
+      tokens.sort_by! { |t| -(t[:value_usd] || 0) }
+
+      {
+        address: address,
+        total_value_usd: total_value_usd.round(2),
+        tokens: tokens
+      }
+    end
+
     private
 
     def validate_address!(address)
