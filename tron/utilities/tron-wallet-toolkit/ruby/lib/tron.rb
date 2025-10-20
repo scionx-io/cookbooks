@@ -8,12 +8,21 @@ require_relative 'tron/configuration'
 module Tron
   class << self
     def client
-      @client ||= Client.new
+      @client ||= Client.new(
+        api_key: Client.configuration.api_key,
+        tronscan_api_key: Client.configuration.tronscan_api_key,
+        network: Client.configuration.network,
+        timeout: Client.configuration.timeout
+      )
     end
 
     def configure(&block)
       @client = nil # Reset client when configuration changes
       Client.configure(&block)
+    end
+
+    def configuration
+      Client.configuration
     end
 
     # Delegate common methods to the default client
