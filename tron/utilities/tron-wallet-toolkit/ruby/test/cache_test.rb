@@ -2,154 +2,168 @@ require 'test_helper'
 
 class CacheTest < Minitest::Test
   def setup
-    @client = Tron::Client.new(
-      api_key: ENV['TRONGRID_API_KEY'],
-      tronscan_api_key: ENV['TRONSCAN_API_KEY'],
-      network: :mainnet,
-      cache: { enabled: true, ttl: 30, max_stale: 300 }
-    )
-    @test_address = "TCPh7Qd7DwHvphmfJGCQQgCGRP7aY4drEV"
+    # Clear the global cache before each test
+    Tron::Cache.clear
+    Tron::Cache.reset_stats
   end
 
-  def test_cache_configuration
-    assert @client.respond_to?(:cache_enabled?), "Client should have cache_enabled? method"
-    assert @client.cache_enabled?, "Cache should be enabled"
-    assert_equal 30, @client.configuration.cache_ttl
-    assert_equal 300, @client.configuration.cache_max_stale
+  def teardown
+    # Clear the global cache after each test
+    Tron::Cache.clear
+    Tron::Cache.reset_stats
   end
 
-  def test_portfolio_caching_speedup
-    # First call - should hit API
-    start = Time.now
-    result1 = @client.get_wallet_portfolio(@test_address)
-    time1 = Time.now - start
+  def test_basic_caching
+    call_count = 0
 
-    # Second call - should use cache
-    start = Time.now
-    result2 = @client.get_wallet_portfolio(@test_address)
-    time2 = Time.now - start
-
-    assert result1[:tokens].length > 0, "Should have tokens"
-    assert_equal result1[:tokens].length, result2[:tokens].length, "Results should match"
-    assert time2 < (time1 / 2), "Second call should be at least 2x faster (cached)"
-  end
-
-  def test_price_caching
-    # First call
-    result1 = @client.get_wallet_portfolio(@test_address)
-    usdt1 = result1[:tokens].find { |t| t[:symbol] == 'USDT' }
-
-    sleep 1 # Small delay
-
-    # Second call - prices should be cached
-    start = Time.now
-    result2 = @client.get_wallet_portfolio(@test_address)
-    time2 = Time.now - start
-
-    usdt2 = result2[:tokens].find { |t| t[:symbol] == 'USDT' }
-
-    assert_equal usdt1[:price_usd], usdt2[:price_usd], "Cached price should match"
-    assert time2 < 0.5, "Second call should be very fast (cached)"
-  end
-
-  def test_rate_limit_protection
-    errors = 0
-    cached = 0
-
-    10.times do |i|
-      start = Time.now
-      begin
-        result = @client.get_wallet_portfolio(@test_address)
-        time = Time.now - start
-        cached += 1 if time < 0.5
-      rescue => e
-        errors += 1
-      end
-      sleep 0.5 # Faster than 1 req/sec rate limit
+    # First call - should execute block
+    result1 = Tron::Cache.fetch("test_key", ttl: 30, max_stale: 300) do
+      call_count += 1
+      "cached_value"
     end
 
-    assert_equal 0, errors, "Should not have any rate limit errors"
-    assert cached >= 8, "At least 8/10 requests should be cached"
+    # Second call - should use cache
+    result2 = Tron::Cache.fetch("test_key", ttl: 30, max_stale: 300) do
+      call_count += 1
+      "cached_value"
+    end
+
+    assert_equal "cached_value", result1
+    assert_equal "cached_value", result2
+    assert_equal 1, call_count, "Block should only execute once"
   end
 
   def test_cache_ttl_expiration
-    # Create client with short TTL for testing
-    client = Tron::Client.new(
-      api_key: ENV['TRONGRID_API_KEY'],
-      tronscan_api_key: ENV['TRONSCAN_API_KEY'],
-      cache: { enabled: true, ttl: 5, max_stale: 10 }
-    )
+    call_count = 0
 
-    # First request
-    start = Time.now
-    result1 = client.get_wallet_portfolio(@test_address)
-    time1 = Time.now - start
+    # First call
+    result1 = Tron::Cache.fetch("test_ttl", ttl: 1, max_stale: 10) do
+      call_count += 1
+      "value_#{call_count}"
+    end
 
-    # Immediate second request (should be cached)
-    start = Time.now
-    result2 = client.get_wallet_portfolio(@test_address)
-    time2 = Time.now - start
+    # Immediate second call - should use cache
+    result2 = Tron::Cache.fetch("test_ttl", ttl: 1, max_stale: 10) do
+      call_count += 1
+      "value_#{call_count}"
+    end
 
     # Wait for TTL to expire
-    sleep 6
+    sleep 1.5
 
-    # Third request (should hit API again)
-    start = Time.now
-    result3 = client.get_wallet_portfolio(@test_address)
-    time3 = Time.now - start
+    # Third call - should execute block again
+    result3 = Tron::Cache.fetch("test_ttl", ttl: 1, max_stale: 10) do
+      call_count += 1
+      "value_#{call_count}"
+    end
 
-    assert time2 < (time1 / 2), "Second request should be cached"
-    assert time3 > (time2 * 2), "Third request should hit API again after TTL"
+    assert_equal "value_1", result1
+    assert_equal "value_1", result2
+    assert_equal "value_2", result3
+    assert_equal 2, call_count, "Block should execute twice (initial + after expiry)"
   end
 
-  def test_stale_while_revalidate
-    skip "Requires manual testing with API failures"
+  def test_stale_value_fallback
+    call_count = 0
 
-    # 1. Populate cache
-    @client.get_wallet_portfolio(@test_address)
+    # First call - cache a value
+    result1 = Tron::Cache.fetch("test_stale", ttl: 1, max_stale: 10) do
+      call_count += 1
+      "initial_value"
+    end
 
-    # 2. Wait for TTL to expire but within max_stale
-    sleep 35 # Cache is stale but within 5min max_stale
+    # Wait for TTL to expire but stay within max_stale
+    sleep 1.5
 
-    # 3. Make request - should serve stale if API fails
-    result = @client.get_wallet_portfolio(@test_address)
+    # Second call - TTL expired, block raises error, should return stale value
+    result2 = Tron::Cache.fetch("test_stale", ttl: 1, max_stale: 10) do
+      call_count += 1
+      raise "API Error"
+    end
 
-    assert !result[:tokens].empty?, "Should return data (fresh or stale)"
+    assert_equal "initial_value", result1
+    assert_equal "initial_value", result2, "Should return stale value on error"
+    assert_equal 2, call_count, "Block should execute twice"
   end
 
   def test_cache_stats
-    skip unless @client.respond_to?(:cache_stats)
+    # Make some cache calls
+    3.times do
+      Tron::Cache.fetch("stats_key", ttl: 30, max_stale: 300) { "value" }
+    end
 
-    # Make some requests
-    3.times { @client.get_wallet_portfolio(@test_address) }
-
-    stats = @client.cache_stats
-    assert stats.is_a?(Hash), "Cache stats should be a hash"
+    stats = Tron::Cache.stats("stats_key")
+    assert_equal 2, stats[:hits], "Should have 2 cache hits"
+    assert_equal 0, stats[:misses]
+    assert stats[:cached_at].is_a?(Time)
+    assert_equal 30, stats[:ttl]
   end
 
-  def test_cache_key_includes_network
-    skip "Requires cache implementation in services"
+  def test_global_stats
+    # Make cache calls to different keys
+    2.times { Tron::Cache.fetch("key1", ttl: 30, max_stale: 300) { "value1" } }
+    3.times { Tron::Cache.fetch("key2", ttl: 30, max_stale: 300) { "value2" } }
 
-    mainnet_client = Tron::Client.new(
-      api_key: ENV['TRONGRID_API_KEY'],
-      tronscan_api_key: ENV['TRONSCAN_API_KEY'],
-      network: :mainnet,
-      cache: { enabled: true, ttl: 30 }
-    )
+    global_stats = Tron::Cache.global_stats
 
-    nile_client = Tron::Client.new(
-      api_key: ENV['TRONGRID_API_KEY'],
-      tronscan_api_key: ENV['TRONSCAN_API_KEY'],
-      network: :nile,
-      cache: { enabled: true, ttl: 30 }
-    )
+    assert_equal 3, global_stats[:total_hits], "Should have 3 cache hits (1 from key1, 2 from key2)"
+    assert_equal 2, global_stats[:total_misses], "Should have 2 misses (initial calls)"
+    assert_equal 5, global_stats[:total_fetches], "Should have 5 total fetches"
+    assert global_stats[:hit_rate_percentage] > 0
+  end
 
-    # These should cache separately (different networks)
-    mainnet_result = mainnet_client.get_wallet_portfolio(@test_address)
-    nile_result = nile_client.get_wallet_portfolio(@test_address)
+  def test_cache_exists
+    refute Tron::Cache.exists?("nonexistent"), "Should not exist"
 
-    # Results should potentially be different (different networks)
-    # Cache keys should include network to prevent cross-contamination
-    assert true # Placeholder - actual test would verify cache keys
+    Tron::Cache.fetch("existing", ttl: 30, max_stale: 300) { "value" }
+
+    assert Tron::Cache.exists?("existing"), "Should exist after caching"
+  end
+
+  def test_cache_delete
+    Tron::Cache.fetch("deletable", ttl: 30, max_stale: 300) { "value" }
+    assert Tron::Cache.exists?("deletable")
+
+    Tron::Cache.delete("deletable")
+    refute Tron::Cache.exists?("deletable"), "Should be deleted"
+  end
+
+  def test_cache_clear
+    Tron::Cache.fetch("key1", ttl: 30, max_stale: 300) { "value1" }
+    Tron::Cache.fetch("key2", ttl: 30, max_stale: 300) { "value2" }
+
+    assert_equal 2, Tron::Cache.size
+
+    Tron::Cache.clear
+
+    assert_equal 0, Tron::Cache.size
+  end
+
+  def test_cache_size
+    assert_equal 0, Tron::Cache.size
+
+    Tron::Cache.fetch("key1", ttl: 30, max_stale: 300) { "value1" }
+    assert_equal 1, Tron::Cache.size
+
+    Tron::Cache.fetch("key2", ttl: 30, max_stale: 300) { "value2" }
+    assert_equal 2, Tron::Cache.size
+  end
+
+  def test_block_required
+    assert_raises(ArgumentError) do
+      Tron::Cache.fetch("key", ttl: 30, max_stale: 300)
+    end
+  end
+
+  def test_different_networks_use_different_cache_keys
+    # This test verifies that cache keys should include network context
+    # when used by the client (this is tested at integration level)
+
+    mainnet_value = Tron::Cache.fetch("balance:mainnet:addr123", ttl: 30, max_stale: 300) { "mainnet_data" }
+    nile_value = Tron::Cache.fetch("balance:nile:addr123", ttl: 30, max_stale: 300) { "nile_data" }
+
+    assert_equal "mainnet_data", mainnet_value
+    assert_equal "nile_data", nile_value
+    assert_equal 2, Tron::Cache.size, "Should have separate cache entries for different networks"
   end
 end

@@ -67,7 +67,7 @@ module Tron
             }
             @@global_stats[:total_misses] += 1
             return new_value
-          rescue => e
+          rescue
             # Return stale value as fallback
             # Increment miss counter since the block failed
             @@store[key][:misses] = (entry[:misses] || 0) + 1
