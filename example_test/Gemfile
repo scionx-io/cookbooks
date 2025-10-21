@@ -1,7 +1,7 @@
 # Gemfile for testing the Tron gem
 source 'https://rubygems.org'
 
-gem 'tron.rb', '~> 1.0.7'
+gem 'tron.rb', '~> 1.0.8'
 gem 'dotenv', '~> 2.7' # For environment variable management
 
 # Only include minitest if you want to run tests as well
