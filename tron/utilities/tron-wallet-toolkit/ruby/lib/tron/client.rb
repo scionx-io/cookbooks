@@ -120,6 +120,22 @@ module Tron
       }
     end
 
+    def cache_enabled?
+      configuration.cache_enabled
+    end
+
+    def cache_stats
+      {
+        price: price_service.cache_stats,
+        balance: balance_service.cache_stats
+      }
+    end
+
+    def clear_cache
+      price_service.clear_cache
+      balance_service.clear_cache
+    end
+
     private
 
     def validate_address!(address)

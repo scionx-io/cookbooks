@@ -20,6 +20,16 @@ module Tron
       setup_urls
     end
 
+    def cache=(options)
+      if options.is_a?(Hash)
+        @cache_enabled = options.fetch(:enabled, true)
+        @cache_ttl = options.fetch(:ttl, 300)
+        @cache_max_stale = options.fetch(:max_stale, 600)
+      elsif options == false
+        @cache_enabled = false
+      end
+    end
+
     private
 
     def setup_urls
