@@ -84,7 +84,7 @@ module Tron
           decimals: 6,
           address: nil,
           price_usd: trx_price,
-          usd_value: trx_price ? (trx_balance * trx_price).round(2) : nil
+          usd_value: trx_price ? (trx_balance * trx_price) : nil
         }
       end
 
@@ -94,7 +94,7 @@ module Tron
 
         # Get USD price for this token
         price_usd = price_service.get_token_price_usd(token[:symbol].downcase)
-        usd_value = price_usd ? (token[:balance] * price_usd).round(2) : nil
+        usd_value = price_usd ? (token[:balance] * price_usd) : nil
 
         tokens << {
           symbol: token[:symbol],
@@ -115,7 +115,7 @@ module Tron
 
       {
         address: address,
-        total_value_usd: total_value_usd.round(2),
+        total_value_usd: total_value_usd,
         tokens: tokens
       }
     end
