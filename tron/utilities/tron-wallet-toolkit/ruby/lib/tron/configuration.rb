@@ -2,11 +2,16 @@
 module Tron
   class Configuration
     attr_accessor :api_key, :tronscan_api_key, :network, :timeout, :base_url, :tronscan_base_url, :strict_mode
+    attr_accessor :cache_enabled, :cache_ttl, :cache_max_stale
 
     def initialize
       @network = :mainnet
       @timeout = 30
       @strict_mode = false
+      # Cache configuration defaults
+      @cache_enabled = true
+      @cache_ttl = 300        # 5 minutes default TTL
+      @cache_max_stale = 600  # 10 minutes max stale
       setup_urls
     end
 
