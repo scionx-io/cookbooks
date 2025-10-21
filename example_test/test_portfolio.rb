@@ -72,13 +72,14 @@ begin
     puts "Total Value (USD): $#{portfolio[:total_value_usd].round(2)}"
     puts "\nTokens:"
     portfolio[:tokens].each do |token|
-      # Format the token balance to avoid scientific notation
-    formatted_balance = if token[:token_balance].abs < 1e-4 && token[:token_balance] != 0
-                          format("%.6f", token[:token_balance]).gsub(/0+$/, '')
-                        else
-                          token[:token_balance].to_s
-                        end
-    puts "  #{token[:symbol]}: #{formatted_balance} (Price: $#{token[:price_usd] ? token[:price_usd].round(4) : 'N/A'}, Value: $#{token[:usd_value] ? token[:usd_value].round(2) : 'N/A'})"
+      # Format the token balance to avoid scientific notation in display
+      formatted_balance = if token[:token_balance].abs < 1e-4 && token[:token_balance] != 0
+                            # For very small balances, format to show full decimal without scientific notation
+                            sprintf("%.#{token[:decimals] || 6}f", token[:token_balance]).gsub(/0+$/, '')
+                          else
+                            token[:token_balance].to_s
+                          end
+      puts "  #{token[:symbol]}: #{formatted_balance} (Price: $#{token[:price_usd] ? token[:price_usd].round(4) : 'N/A'}, Value: $#{token[:usd_value] ? token[:usd_value].round(2) : 'N/A'})"
     end
 
     puts "\nCache Statistics:"

@@ -5,7 +5,7 @@ GEM
     dotenv (2.8.1)
     minitest (5.26.0)
     rake (13.3.0)
-    tron.rb (1.0.6)
+    tron.rb (1.0.7)
       base58 (~> 0.2)
       dotenv (~> 2.7)
 
@@ -17,7 +17,7 @@ DEPENDENCIES
   dotenv (~> 2.7)
   minitest (~> 5.0)
   rake (~> 13.0)
-  tron.rb (~> 1.0.6)
+  tron.rb (~> 1.0.7)
 
 BUNDLED WITH
    2.7.2
