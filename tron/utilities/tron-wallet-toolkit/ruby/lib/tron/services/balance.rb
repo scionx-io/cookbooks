@@ -87,7 +87,7 @@ module Tron
             {
               symbol: token['token_abbr'] || token['token_name'],
               name: token['token_name'],
-              balance: token['balance'].to_f,
+              balance: format_trc20_balance(token['balance'], (token['token_decimal'] || 6).to_i),
               decimals: (token['token_decimal'] || 6).to_i,
               address: token['token_id']
             }
@@ -152,6 +152,18 @@ module Tron
         whole = balance / divisor
         fraction = balance % divisor
         "#{whole}.#{fraction.to_s.rjust(decimals, '0')}"
+      end
+
+      def format_trc20_balance(balance_str, decimals)
+        # Convert to float while avoiding scientific notation for small numbers
+        balance = balance_str.to_f
+        
+        # Format to avoid scientific notation for small numbers
+        if balance.abs < 1e-4 && balance != 0
+          format("%.#{decimals}f", balance).gsub(/0+$/, '')
+        else
+          balance
+        end
       end
 
       def api_headers
