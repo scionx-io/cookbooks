@@ -4,6 +4,7 @@ require 'dotenv/load' if File.exist?('.env')
 require_relative 'tron/version'
 require_relative 'tron/client'
 require_relative 'tron/configuration'
+require_relative 'tron/cache'
 
 module Tron
   class << self

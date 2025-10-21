@@ -33,6 +33,11 @@ Tron.configure do |config|
   config.tronscan_api_key = 'your_tronscan_api_key'
   config.network = :mainnet  # or :shasta or :nile
   config.timeout = 30
+
+  # Cache configuration (optional)
+  config.cache_enabled = true     # Enable/disable caching (default: true)
+  config.cache_ttl = 300          # Cache TTL in seconds (default: 300 = 5 minutes)
+  config.cache_max_stale = 600    # Max stale time in seconds (default: 600 = 10 minutes)
 end
 ```
 
@@ -112,10 +117,136 @@ end
 - ✓ Token prices
 - ✓ Portfolio tracking
 - ✓ Multi-network support (mainnet, shasta, nile)
+- ✓ Intelligent caching with TTL and stale-while-revalidate
+- ✓ Cache statistics and monitoring
 - ✓ Clean, simple output
 - ✓ Proper decimal formatting
 - ✓ Environment variable support
 - ✓ Rate limit management with API keys
+
+## Caching
+
+The gem includes an intelligent caching system to reduce API calls and improve performance.
+
+### How Caching Works
+
+The cache uses a **time-based expiration strategy** with **stale-while-revalidate** behavior:
+
+1. **Fresh Cache (age < TTL)**: Returns cached value immediately
+2. **Stale Cache (age > TTL but < max_stale)**: Attempts to refresh, falls back to stale value on error
+3. **Expired Cache (age > max_stale)**: Forces refresh, raises error if refresh fails
+
+This approach ensures:
+- Fast responses from fresh cache
+- High availability with stale fallbacks
+- Automatic background refresh for popular endpoints
+
+### Cache Configuration
+
+```ruby
+Tron.configure do |config|
+  # Enable or disable caching globally (default: true)
+  config.cache_enabled = true
+
+  # Set default TTL (time-to-live) in seconds (default: 300 = 5 minutes)
+  config.cache_ttl = 300
+
+  # Set max stale time in seconds (default: 600 = 10 minutes)
+  config.cache_max_stale = 600
+end
+```
+
+### Endpoint-Specific TTL Values
+
+Different endpoints have optimized TTL values based on data volatility:
+
+| Endpoint Type | TTL | Max Stale | Use Case |
+|---------------|-----|-----------|----------|
+| **balance** | 5 min | 10 min | Wallet balances, moderate volatility |
+| **price** | 1 min | 2 min | Token prices, high volatility |
+| **token_info** | 15 min | 30 min | Token metadata, low volatility |
+| **resources** | 5 min | 10 min | Account resources, moderate volatility |
+| **default** | 5 min | 10 min | Unclassified endpoints |
+
+### Cache Statistics
+
+Monitor cache performance to optimize your configuration:
+
+```ruby
+# Get global cache statistics
+stats = Tron::Cache.global_stats
+puts "Cache Hit Rate: #{stats[:hit_rate_percentage]}%"
+puts "Total Hits: #{stats[:total_hits]}"
+puts "Total Misses: #{stats[:total_misses]}"
+puts "Cache Size: #{stats[:cache_size]} entries"
+
+# Get statistics for a specific cache entry
+key_stats = Tron::Cache.stats("specific_key")
+if key_stats
+  puts "Entry Hits: #{key_stats[:hits]}"
+  puts "Entry Misses: #{key_stats[:misses]}"
+  puts "Cached At: #{key_stats[:cached_at]}"
+  puts "Expires At: #{key_stats[:expires_at]}"
+  puts "Expired: #{key_stats[:expired]}"
+end
+```
+
+### Cache Management
+
+```ruby
+# Clear entire cache
+Tron::Cache.clear
+
+# Delete specific cache entry
+Tron::Cache.delete("cache_key")
+
+# Check if key exists in cache
+if Tron::Cache.exists?("cache_key")
+  puts "Key is cached"
+end
+
+# Get cache size
+puts "Cache has #{Tron::Cache.size} entries"
+
+# Reset statistics (useful for testing)
+Tron::Cache.reset_stats
+```
+
+### Advanced Cache Usage
+
+#### Disable Caching for Specific Requests
+
+```ruby
+# Disable cache for a specific HTTP request
+response = Tron::Utils::HTTP.get(url, headers, { enabled: false })
+```
+
+#### Custom TTL for Specific Requests
+
+```ruby
+# Use custom TTL values for a specific request
+response = Tron::Utils::HTTP.get(url, headers, {
+  ttl: 60,         # 1 minute
+  max_stale: 120   # 2 minutes
+})
+```
+
+#### Use Endpoint-Specific TTL
+
+```ruby
+# Use predefined TTL for specific endpoint type
+response = Tron::Utils::HTTP.get(url, headers, {
+  endpoint_type: :price  # Uses 1 min TTL, 2 min max_stale
+})
+```
+
+### Cache Best Practices
+
+1. **Enable caching in production** - Reduces API calls and improves response times
+2. **Monitor hit rates** - Aim for >70% hit rate for frequently accessed data
+3. **Adjust TTL based on data volatility** - Shorter TTL for prices, longer for token metadata
+4. **Use stale fallbacks** - Ensures high availability during API issues
+5. **Clear cache after mutations** - If you modify data, clear related cache entries
 
 ## Services Architecture
 
@@ -124,8 +255,9 @@ The gem is organized into modular services:
 - `Tron::Services::Balance` - TRX and TRC20 token balances
 - `Tron::Services::Resources` - Account resources (bandwidth/energy)
 - `Tron::Services::Price` - Token price information
-- `Tron::Utils::HTTP` - HTTP client with error handling
+- `Tron::Utils::HTTP` - HTTP client with error handling and caching
 - `Tron::Utils::Address` - TRON address validation and conversion
+- `Tron::Cache` - Thread-safe caching with TTL and statistics
 
 ## API Reference
 
