@@ -15,7 +15,7 @@ module Tron
         # Try getaccountresource first
         begin
           get_account_resources(address)
-        rescue => e
+        rescue
           # Fallback to getaccount if getaccountresource fails
           get_account_resources_fallback(address)
         end

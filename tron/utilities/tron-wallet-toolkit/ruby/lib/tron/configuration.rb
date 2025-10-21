@@ -1,8 +1,9 @@
 # lib/tron/configuration.rb
 module Tron
   class Configuration
-    attr_accessor :api_key, :tronscan_api_key, :network, :timeout, :base_url, :tronscan_base_url, :strict_mode
+    attr_accessor :api_key, :tronscan_api_key, :timeout, :base_url, :tronscan_base_url, :strict_mode
     attr_accessor :cache_enabled, :cache_ttl, :cache_max_stale
+    attr_reader :network
 
     def initialize
       @network = :mainnet
