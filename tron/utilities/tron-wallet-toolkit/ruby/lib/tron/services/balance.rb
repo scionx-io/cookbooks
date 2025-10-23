@@ -40,7 +40,13 @@ module Tron
         raise "Unexpected API response format" unless response.is_a?(Hash)
         raise "Missing 'data' field in response" unless response.key?('data')
         raise "Invalid 'data' format in response" unless response['data'].is_a?(Array)
-        raise "Empty account data in response" if response['data'].empty?
+
+        # Handle empty data array (new/inactive accounts) - return 0 balance
+        if response['data'].empty?
+          result = "0.000000"
+          @cache.set(cache_key, result) if @config.cache_enabled
+          return result
+        end
 
         account_data = response['data'].first
         raise "Invalid account data format" unless account_data.is_a?(Hash)
