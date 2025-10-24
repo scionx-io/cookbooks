@@ -40,10 +40,10 @@ module Tron
         @tronscan_base_url = 'https://apilist.tronscanapi.com'
       when :shasta
         @base_url = 'https://api.shasta.trongrid.io'
-        @tronscan_base_url = 'https://api.shasta.tronscanapi.com'
+        @tronscan_base_url = 'https://shasta.tronscan.org'
       when :nile
         @base_url = 'https://nile.trongrid.io'
-        @tronscan_base_url = 'https://api.nileex.net'
+        @tronscan_base_url = 'https://nileapi.tronscan.org'
       else
         @base_url = 'https://api.trongrid.io'
         @tronscan_base_url = 'https://apilist.tronscanapi.com'
