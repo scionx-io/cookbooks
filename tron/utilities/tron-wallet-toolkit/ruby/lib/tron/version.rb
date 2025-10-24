@@ -2,5 +2,5 @@
 
 # lib/tron/version.rb
 module Tron
-  VERSION = "1.1.0".freeze
+  VERSION = "1.1.2".freeze
 end
