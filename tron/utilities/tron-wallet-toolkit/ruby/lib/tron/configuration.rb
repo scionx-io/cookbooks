@@ -3,6 +3,8 @@ module Tron
   class Configuration
     attr_accessor :api_key, :tronscan_api_key, :timeout, :base_url, :tronscan_base_url, :strict_mode
     attr_accessor :cache_enabled, :cache_ttl, :cache_max_stale
+    attr_accessor :default_address  # Default address for read-only calls
+    attr_accessor :fee_limit        # Default fee limit for transactions
     attr_reader :network
 
     def initialize
@@ -13,6 +15,9 @@ module Tron
       @cache_enabled = true
       @cache_ttl = 300        # 5 minutes default TTL
       @cache_max_stale = 600  # 10 minutes max stale
+      # Contract-related defaults
+      @default_address = nil
+      @fee_limit = 100_000_000  # 100 TRX default
       setup_urls
     end
 
