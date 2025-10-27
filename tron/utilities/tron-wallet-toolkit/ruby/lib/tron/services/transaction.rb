@@ -34,25 +34,34 @@ module Tron
 
       # Signs a transaction locally using the private key
       #
-      # @param transaction [Hash] the transaction to sign
+      # IMPORTANT: TRON uses SHA256 for transaction hashing, NOT Keccak256
+      # The txID provided by TronGrid API is already the correct SHA256 hash
+      # of the properly protobuf-serialized raw_data
+      #
+      # @param transaction [Hash] the transaction to sign (must have 'txID' field)
       # @param private_key [String] the private key in hex format
       # @return [Hash] the signed transaction
+      # @raise [ArgumentError] if transaction doesn't have txID field
       def sign_transaction_locally(transaction, private_key)
         # Create a key instance with the provided private key
         key = Key.new(priv: private_key)
-        
-        # Get raw data for transaction hashing
-        raw_data = prepare_transaction_for_signing(transaction)
-        
-        # Hash the transaction data
-        tx_hash = Tron::Utils::Crypto.keccak256(raw_data)
-        
-        # Sign the transaction hash
+
+        # Ensure transaction has txID from TronGrid API
+        unless transaction['txID']
+          raise ArgumentError, "Transaction must have 'txID' field. Create transaction via TronGrid API first."
+        end
+
+        # The txID is the SHA256 hash of the protobuf-serialized raw_data
+        # Convert from hex string to binary for signing
+        tx_hash = Tron::Utils::Crypto.hex_to_bin(transaction['txID'])
+
+        # Sign the transaction hash locally
+        # SECURITY: Private key never leaves this machine!
         signature = key.sign(tx_hash)
-        
+
         # Add the signature to the transaction
         transaction['signature'] = [signature]
-        
+
         transaction
       end
 
@@ -70,18 +79,6 @@ module Tron
         }
 
         Utils::HTTP.post(endpoint, payload)
-      end
-
-      # Prepares a transaction for signing by serializing it properly
-      #
-      # @param transaction [Hash] the transaction to prepare
-      # @return [String] the serialized transaction data
-      def prepare_transaction_for_signing(transaction)
-        # Extract the raw transaction data for signing
-        # TRON transactions need to be properly serialized using Protocol Buffers before signing
-        serialized_data = Tron::Protobuf::TransactionSerializer.serialize_for_signing(transaction)
-        
-        serialized_data
       end
 
       # Broadcasts a signed transaction to the TRON network
