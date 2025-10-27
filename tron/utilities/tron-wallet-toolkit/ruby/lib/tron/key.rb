@@ -118,7 +118,7 @@ module Tron
       prefixed_address_hex = Tron::Key::ADDRESS_PREFIX + Tron::Utils::Crypto.bin_to_hex(address_bytes)
       prefixed_address_bytes = Tron::Utils::Crypto.hex_to_bin(prefixed_address_hex)
       
-      # Use the new base58check utility
+      # Use the base58check utility
       Tron::Utils::Crypto.base58check(prefixed_address_bytes)
     end
 

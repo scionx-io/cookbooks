@@ -16,10 +16,8 @@ module Tron
         return false unless address && address.length == 34 && address.start_with?('T')
         
         begin
-          # Decode the Base58 address (excluding the 'T' prefix) to get the raw bytes
-          decoded_bytes = Base58.encode_bin(address[1..-1])
-          # This approach is wrong - we need to decode, not encode
-          decoded_bytes = Base58.decode_bin(address[1..-1])
+          # Decode the entire Base58 address to get the raw bytes
+          decoded_bytes = Base58.decode_bin(address)
           # Should have 21 bytes (1 byte prefix + 20 address bytes) + 4 bytes checksum = 25 bytes total
           return false unless decoded_bytes.length == 25
           
@@ -32,7 +30,7 @@ module Tron
           expected_checksum = Digest::SHA256.digest(Digest::SHA256.digest(addr_part))[0...4]
           
           # Check if the address prefix is correct (should be 0x41 which is decimal 65)
-          return (checksum == expected_checksum) && (addr_part[0] == 65) # 0x41 = 65 in decimal
+          return (checksum == expected_checksum) && (addr_part[0].ord == 65) # 0x41 = 65 in decimal
         rescue
           false
         end
@@ -46,14 +44,14 @@ module Tron
       def self.to_hex(address)
         return address if address.start_with?(ADDRESS_PREFIX) && address.length == 42 # Already hex format
 
-        # Decode the Base58 address (excluding the 'T' prefix) to get the raw bytes
-        decoded_bytes = Base58.decode_bin(address[1..-1])
+        # Decode the full Base58 address to get the raw bytes
+        decoded_bytes = Base58.decode_bin(address)
         # Should have 21 bytes (1 byte prefix + 20 address bytes) + 4 bytes checksum = 25 bytes total
         raise ArgumentError, "Invalid TRON address format: #{address}" unless decoded_bytes.length == 25
-        
+
         # Take only the first 21 bytes (address part with prefix)
         addr_part = decoded_bytes[0...21]
-        
+
         # Convert to hex string
         addr_part.unpack1('H*')
       end
