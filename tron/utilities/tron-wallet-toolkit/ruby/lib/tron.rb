@@ -5,6 +5,8 @@ require_relative 'tron/version'
 require_relative 'tron/client'
 require_relative 'tron/configuration'
 require_relative 'tron/cache'
+require_relative 'tron/key'
+require_relative 'tron/signature'
 
 module Tron
   class << self

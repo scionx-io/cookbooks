@@ -23,6 +23,8 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'base58', '~> 0.2'
   spec.add_dependency 'dotenv', '~> 2.7'
+  spec.add_dependency 'digest-sha3', '~> 1.1'  # For keccak256
+  spec.add_dependency 'rbsecp256k1', '~> 5.1'  # For signing
 
   spec.add_development_dependency 'bundler', '~> 2.0'
   spec.add_development_dependency 'rake', '~> 13.0'

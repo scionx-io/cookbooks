@@ -48,8 +48,23 @@ module Tron
       end
 
       # POST request (no caching for mutations)
-      def self.post(url, body = nil, headers = {})
-        make_request(Net::HTTP::Post, url, body, headers)
+      def self.post(url, payload, cache_options = {})
+        require 'net/http'
+        require 'json'
+
+        uri = URI(url)
+        http = Net::HTTP.new(uri.host, uri.port)
+        http.use_ssl = (uri.scheme == 'https')
+
+        request = Net::HTTP::Post.new(uri.path, {
+          'Content-Type' => 'application/json',
+          'TRON-PRO-API-KEY' => Tron.configuration.api_key
+        }.compact)
+
+        request.body = payload.to_json
+
+        response = http.request(request)
+        JSON.parse(response.body)
       end
 
       # Clear cache for a specific endpoint

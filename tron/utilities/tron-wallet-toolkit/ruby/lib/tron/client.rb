@@ -3,6 +3,7 @@ require_relative 'configuration'
 require_relative 'services/balance'
 require_relative 'services/resources'
 require_relative 'services/price'
+require_relative 'services/contract'
 
 module Tron
   class Client
@@ -41,6 +42,10 @@ module Tron
 
     def price_service
       @price_service ||= Services::Price.new(@configuration)
+    end
+
+    def contract_service
+      @contract_service ||= Services::Contract.new(@configuration)
     end
 
     # Convenience methods that combine multiple services
