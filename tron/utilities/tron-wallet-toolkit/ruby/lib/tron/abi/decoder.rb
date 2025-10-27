@@ -20,21 +20,21 @@ module Tron
           if type.dimensions.empty?
             l = Util.deserialize_big_endian_to_int arg[0, 32]
             data = arg[32..-1]
-            raise DecodingError, "Wrong data size for string/bytes object" unless data.size == Util.ceil32(l)
+            raise DecodingError, "Wrong data size for string/bytes object" unless data.bytesize == Util.ceil32(l)
 
             # decoded strings and bytes
             data[0, l]
             # Case: decoding array of string/bytes
           else
             l = Util.deserialize_big_endian_to_int arg[0, 32]
-            raise DecodingError, "Wrong data size for dynamic array" unless arg.size >= 32 + 32 * l
+            raise DecodingError, "Wrong data size for dynamic array" unless arg.bytesize >= 32 + 32 * l
 
             # Decode each element of the array
             (1..l).map do |i|
               pointer = Util.deserialize_big_endian_to_int arg[i * 32, 32] # Pointer to the size of the array's element
-              raise DecodingError, "Offset out of bounds" if pointer < 32 * l || pointer > arg.size - 64
+              raise DecodingError, "Offset out of bounds" if pointer < 32 * l || pointer > arg.bytesize - 64
               data_l = Util.deserialize_big_endian_to_int arg[32 + pointer, 32] # length of the element
-              raise DecodingError, "Offset out of bounds" if pointer + 32 + Util.ceil32(data_l) > arg.size
+              raise DecodingError, "Offset out of bounds" if pointer + 32 + Util.ceil32(data_l) > arg.bytesize
               type(Type.parse(type.base_type), arg[pointer + 32, Util.ceil32(data_l) + 32])
             end
           end
@@ -48,14 +48,14 @@ module Tron
               next_offset = if i + 1 < type.components.size
                   Util.deserialize_big_endian_to_int arg[offset + 32, 32]
                 else
-                  arg.size
+                  arg.bytesize
                 end
-              raise DecodingError, "Offset out of bounds" if pointer > arg.size || next_offset > arg.size || next_offset < pointer
+              raise DecodingError, "Offset out of bounds" if pointer > arg.bytesize || next_offset > arg.bytesize || next_offset < pointer
               result << type(c, arg[pointer, next_offset - pointer])
               offset += 32
             else
               size = c.size
-              raise DecodingError, "Offset out of bounds" if offset + size > arg.size
+              raise DecodingError, "Offset out of bounds" if offset + size > arg.bytesize
               result << type(c, arg[offset, size])
               offset += size
             end
@@ -66,15 +66,15 @@ module Tron
           nested_sub = type.nested_sub
 
           if nested_sub.dynamic?
-            raise DecodingError, "Wrong data size for dynamic array" unless arg.size >= 32 + 32 * l
+            raise DecodingError, "Wrong data size for dynamic array" unless arg.bytesize >= 32 + 32 * l
             offsets = (0...l).map do |i|
               off = Util.deserialize_big_endian_to_int arg[32 + 32 * i, 32]
-              raise DecodingError, "Offset out of bounds" if off < 32 * l || off > arg.size - 64
+              raise DecodingError, "Offset out of bounds" if off < 32 * l || off > arg.bytesize - 64
               off
             end
             offsets.map { |off| type(nested_sub, arg[32 + off..]) }
           else
-            raise DecodingError, "Wrong data size for dynamic array" unless arg.size >= 32 + nested_sub.size * l
+            raise DecodingError, "Wrong data size for dynamic array" unless arg.bytesize >= 32 + nested_sub.size * l
             # decoded dynamic-sized arrays with static sub-types
             (0...l).map { |i| type(nested_sub, arg[32 + nested_sub.size * i, nested_sub.size]) }
           end
@@ -83,14 +83,14 @@ module Tron
           nested_sub = type.nested_sub
 
           if nested_sub.dynamic?
-            raise DecodingError, "Wrong data size for static array" unless arg.size >= 32 * l
+            raise DecodingError, "Wrong data size for static array" unless arg.bytesize >= 32 * l
             offsets = (0...l).map do |i|
               off = Util.deserialize_big_endian_to_int arg[32 * i, 32]
-              raise DecodingError, "Offset out of bounds" if off < 32 * l || off > arg.size - 32
+              raise DecodingError, "Offset out of bounds" if off < 32 * l || off > arg.bytesize - 32
               off
             end
             offsets.each_with_index.map do |off, i|
-              size = (i + 1 < offsets.length ? offsets[i + 1] : arg.size) - off
+              size = (i + 1 < offsets.length ? offsets[i + 1] : arg.bytesize) - off
               type(nested_sub, arg[off, size])
             end
           else
@@ -114,8 +114,10 @@ module Tron
         case type.base_type
         when "address"
           # Handle TRON-specific address decoding
-          # Take the last 20 bytes (40 hex chars) and convert to TRON address
-          addr_hex = data[24*2..-1]  # Skip first 24 bytes, take last 20
+          # Addresses are 32 bytes (256 bits) with the last 20 bytes being the actual address
+          # The TRON prefix is 0x41, so the address part without prefix should be 40 hex chars
+          addr_bytes = data[-20..-1]  # Get last 20 bytes
+          addr_hex = Util.bin_to_hex(addr_bytes)
           
           require_relative '../utils/address'
           # Convert 40 hex chars (20 bytes) to TRON address
@@ -162,7 +164,7 @@ module Tron
         when "bool"
 
           # decoded boolean
-          data[-1] == Constant::BYTE_ONE
+          data[-1] == ::Tron::Abi::Constant::BYTE_ONE
         else
           raise DecodingError, "Unknown primitive type: #{type.base_type}"
         end
