@@ -26,14 +26,14 @@ module Tron
         ((x + 31) / 32).floor * 32
       end
 
-      # Pads an integer to 32 bytes in hexadecimal format
+      # Pads an integer to 32 bytes in binary format
       #
       # @param x [Integer] the integer to pad
-      # @return [String] the padded integer as a hex string
+      # @return [String] the padded integer as a binary string
       def zpad_int(x)
         # Ensure x is positive for modulo operation
         x = x % (2 ** 256) if x >= 2 ** 256 || x < 0
-        x.to_s(16).rjust(64, '0')
+        [x.to_s(16).rjust(64, '0')].pack('H*')
       end
 
       # Pads a string to a specified length with null bytes
@@ -45,13 +45,13 @@ module Tron
         s + "\x00" * (length - s.length)
       end
 
-      # Pads a hex string to 32 bytes (64 hex characters)
+      # Pads a hex string to 32 bytes (64 hex characters), returning binary
       #
       # @param s [String] the hex string to pad
-      # @return [String] the padded hex string
+      # @return [String] the padded hex as a binary string
       def zpad_hex(s)
         s = s[2..-1] if s.start_with?('0x', '0X')
-        s.rjust(64, '0')
+        [s.rjust(64, '0')].pack('H*')
       end
 
       # Checks if a string is prefixed with 0x
@@ -88,13 +88,12 @@ module Tron
         b.unpack('H*').first
       end
 
-      # Deserialize big endian integer from hex string
+      # Deserialize big endian integer from binary data
       #
-      # @param hex_str [String] the hex string to deserialize
+      # @param data [String] the binary data to deserialize
       # @return [Integer] the deserialized integer
-      def deserialize_big_endian_to_int(hex_str)
-        # Convert hex string to big endian integer
-        [hex_str].pack('H*').unpack1('H*').to_i(16)
+      def deserialize_big_endian_to_int(data)
+        data.unpack1('H*').to_i(16)
       end
     end
   end

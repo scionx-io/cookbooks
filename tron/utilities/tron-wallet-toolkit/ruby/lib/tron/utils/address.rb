@@ -75,9 +75,9 @@ module Tron
         require 'digest'
         checksum = Digest::SHA256.digest(Digest::SHA256.digest(address_bytes))[0...4]
         full_bytes = address_bytes + checksum
-        
+
         # Encode to Base58
-        'T' + Base58.encode_bin(full_bytes)
+        Base58.encode_bin(full_bytes)
       end
     end
   end

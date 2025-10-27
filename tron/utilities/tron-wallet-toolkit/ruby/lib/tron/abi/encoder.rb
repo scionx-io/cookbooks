@@ -21,9 +21,9 @@ module Tron
           arg = handle_hex_string arg, type
 
           # encodes strings and bytes
-          size = type Type.size_type, arg.size
-          padding = Constant::BYTE_ZERO * (Util.ceil32(arg.size) - arg.size)
-          "#{size}#{arg}#{padding}"
+          size = type Type.size_type, arg.bytesize
+          padding = ::Tron::Abi::Constant::BYTE_ZERO * (Util.ceil32(arg.bytesize) - arg.bytesize)
+          (size + arg + padding).b
         elsif type.base_type == "tuple" && type.dimensions.size == 1 && type.dimensions[0] != 0
           result = ""
           result += struct_offsets(type.nested_sub, arg)
@@ -40,7 +40,7 @@ module Tron
             offset = arg.size * 32
             tails.each do |t|
               head += type(Type.size_type, offset)
-              offset += t.size
+              offset += t.bytesize
             end
             head + tails.join
           else
@@ -99,7 +99,7 @@ module Tron
       def uint(arg, type)
         arg = coerce_number arg
         raise ArgumentError, "Don't know how to handle this input." unless arg.is_a? Numeric
-        raise ValueOutOfBounds, "Number out of range: #{arg}" if arg > Constant::UINT_MAX or arg < Constant::UINT_MIN
+        raise ValueOutOfBounds, "Number out of range: #{arg}" if arg > Util::UINT_MAX or arg < Util::UINT_MIN
         real_size = type.sub_type.to_i
         i = arg.to_i
         raise ValueOutOfBounds, arg unless i >= 0 and i < 2 ** real_size
@@ -110,7 +110,7 @@ module Tron
       def int(arg, type)
         arg = coerce_number arg
         raise ArgumentError, "Don't know how to handle this input." unless arg.is_a? Numeric
-        raise ValueOutOfBounds, "Number out of range: #{arg}" if arg > Constant::INT_MAX or arg < Constant::INT_MIN
+        raise ValueOutOfBounds, "Number out of range: #{arg}" if arg > Util::INT_MAX or arg < Util::INT_MIN
         real_size = type.sub_type.to_i
         i = arg.to_i
         raise ValueOutOfBounds, arg unless i >= -2 ** (real_size - 1) and i < 2 ** (real_size - 1)
@@ -148,17 +148,17 @@ module Tron
         arg = handle_hex_string arg, type
 
         if type.sub_type.empty?
-          size = Util.zpad_int arg.size
-          padding = Constant::BYTE_ZERO * (Util.ceil32(arg.size) - arg.size)
+          size = Util.zpad_int arg.bytesize
+          padding = ::Tron::Abi::Constant::BYTE_ZERO * (Util.ceil32(arg.bytesize) - arg.bytesize)
 
           # variable length string/bytes
-          "#{size}#{arg}#{padding}"
+          (size + arg + padding).b
         else
-          raise ValueOutOfBounds, arg unless arg.size <= type.sub_type.to_i
-          padding = Constant::BYTE_ZERO * (32 - arg.size)
+          raise ValueOutOfBounds, arg unless arg.bytesize <= type.sub_type.to_i
+          padding = ::Tron::Abi::Constant::BYTE_ZERO * (32 - arg.bytesize)
 
           # fixed length string/bytes
-          "#{arg}#{padding}"
+          (arg + padding).b
         end
       end
 
@@ -189,7 +189,7 @@ module Tron
             offsets_and_static_values << type(Type.size_type, dynamic_offset)
             dynamic_value = type(component_type, arg.is_a?(Array) ? arg[i] : arg[component_type.name])
             dynamic_values << dynamic_value
-            dynamic_offset += dynamic_value.size
+            dynamic_offset += dynamic_value.bytesize
           else
             offsets_and_static_values << type(component_type, arg.is_a?(Array) ? arg[i] : arg.fetch(component_type.name))
           end
@@ -214,7 +214,7 @@ module Tron
           if i == 0
             offset *= 32
           else
-            offset += tails_encoding[i - 1].size
+            offset += tails_encoding[i - 1].bytesize
           end
           offset_string = type(Type.size_type, offset)
           result += offset_string
