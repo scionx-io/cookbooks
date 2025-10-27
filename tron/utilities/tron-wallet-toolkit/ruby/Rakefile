@@ -10,6 +10,17 @@ Rake::TestTask.new(:test) do |t|
   t.verbose = true
 end
 
+begin
+  require 'rubocop/rake_task'
+  RuboCop::RakeTask.new
+rescue LoadError
+  # rubocop is not available
+  desc 'Run RuboCop (not available)'
+  task :rubocop do
+    puts 'RuboCop is not available. Add it to your Gemfile to run this task.'
+  end
+end
+
 task :default => :test
 
 desc "Build the gem"

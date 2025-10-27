@@ -6,7 +6,11 @@ require_relative '../utils/rate_limiter'
 
 module Tron
   module Services
+    # The Balance service handles retrieving TRX and TRC20 token balances for TRON addresses
     class Balance
+      # Creates a new instance of the Balance service
+      #
+      # @param config [Tron::Configuration] the configuration object
       def initialize(config)
         @config = config
         @cache = Utils::Cache.new(max_age: config.cache_ttl) if config.cache_enabled
@@ -15,6 +19,11 @@ module Tron
         @cache_misses = 0
       end
 
+      # Gets the TRX balance for a given address
+      #
+      # @param address [String] the TRON address to check
+      # @return [String] the TRX balance as a formatted string
+      # @raise [ArgumentError] if the address is invalid
       def get_trx(address)
         validate_address!(address)
 
@@ -61,6 +70,12 @@ module Tron
         result
       end
 
+      # Gets all TRC20 token balances for a given address
+      #
+      # @param address [String] the TRON address to check
+      # @param strict [Boolean] whether to enable strict validation
+      # @return [Array<Hash>] an array of token information
+      # @raise [ArgumentError] if the address is invalid
       def get_trc20_tokens(address, strict: false)
         validate_address!(address)
 
@@ -105,6 +120,9 @@ module Tron
         result
       end
 
+      # Gets cache statistics for the balance service
+      #
+      # @return [Hash] a hash containing cache statistics
       def cache_stats
         total = @cache_hits + @cache_misses
         {
@@ -115,6 +133,7 @@ module Tron
         }
       end
 
+      # Clears the cache for the balance service
       def clear_cache
         @cache&.clear
         @cache_hits = 0
@@ -123,6 +142,10 @@ module Tron
 
       private
 
+      # Validates the structure of token data
+      #
+      # @param token [Hash] the token data to validate
+      # @raise [RuntimeError] if the token data is invalid
       def validate_token_data!(token)
         unless token.is_a?(Hash)
           raise "Invalid token data format: expected hash"
@@ -136,6 +159,11 @@ module Tron
         end
       end
 
+      # Gets all balance information for a given address
+      #
+      # @param address [String] the TRON address to check
+      # @param strict [Boolean] whether to enable strict validation
+      # @return [Hash] a hash containing all balance information
       def get_all(address, strict: false)
         validate_address!(address)
         
@@ -148,10 +176,19 @@ module Tron
 
       private
 
+      # Validates a TRON address
+      #
+      # @param address [String] the address to validate
+      # @raise [ArgumentError] if the address is invalid
       def validate_address!(address)
         raise ArgumentError, "Invalid TRON address: #{address}" unless Utils::Address.validate(address)
       end
 
+      # Formats a raw balance with the specified number of decimals
+      #
+      # @param raw_balance [Integer, String] the raw balance value
+      # @param decimals [Integer] the number of decimal places
+      # @return [String] the formatted balance
       def format_balance(raw_balance, decimals)
         balance = raw_balance.to_i
         divisor = 10 ** decimals
@@ -160,14 +197,18 @@ module Tron
         "#{whole}.#{fraction.to_s.rjust(decimals, '0')}"
       end
 
-
-
+      # Creates headers for the TRON API
+      #
+      # @return [Hash] the API headers
       def api_headers
         headers = { 'accept' => 'application/json' }
         headers['TRON-PRO-API-KEY'] = @config.api_key if @config.api_key
         headers
       end
 
+      # Creates headers for the Tronscan API
+      #
+      # @return [Hash] the Tronscan API headers
       def tronscan_headers
         headers = { 'accept' => 'application/json' }
         headers['TRON-PRO-API-KEY'] = @config.tronscan_api_key if @config.tronscan_api_key

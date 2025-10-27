@@ -5,7 +5,11 @@ require_relative '../utils/rate_limiter'
 
 module Tron
   module Services
+    # The Price service handles retrieving token price information for TRON tokens
     class Price
+      # Creates a new instance of the Price service
+      #
+      # @param config [Tron::Configuration] the configuration object
       def initialize(config)
         @config = config
         @cache = Utils::Cache.new(max_age: config.cache_ttl) if config.cache_enabled
@@ -14,6 +18,10 @@ module Tron
         @cache_misses = 0
       end
 
+      # Gets the price information for a specific token
+      #
+      # @param token [String] the token symbol (default: 'trx')
+      # @return [Hash] the token price information
       def get_token_price(token = 'trx')
         cache_key = cache_key_for(token)
 
@@ -57,6 +65,9 @@ module Tron
         end
       end
 
+      # Gets price information for all available tokens
+      #
+      # @return [Hash] the price information for all tokens
       def get_all_prices
         url = "#{@config.tronscan_base_url}/api/getAssetWithPriceList"
         headers = tronscan_headers
@@ -78,6 +89,10 @@ module Tron
         end
       end
 
+      # Gets the USD price for a specific token
+      #
+      # @param token [String] the token symbol
+      # @return [Float] the token price in USD, or nil if unavailable
       def get_token_price_usd(token)
         cache_key = "#{cache_key_for(token)}:usd"
 
@@ -105,6 +120,11 @@ module Tron
         result
       end
 
+      # Calculates the USD value for a given token balance
+      #
+      # @param balance [String, Numeric] the token balance
+      # @param token [String] the token symbol
+      # @return [Float] the USD value, or nil if unavailable
       def get_token_value_usd(balance, token)
         price = get_token_price_usd(token)
         if price
@@ -115,6 +135,10 @@ module Tron
         end
       end
 
+      # Gets prices for multiple tokens at once
+      #
+      # @param tokens [Array<String>] an array of token symbols
+      # @return [Hash] a hash mapping token symbols to their prices
       def get_multiple_token_prices(tokens)
         prices = {}
         tokens.each_with_index do |token, index|
@@ -134,6 +158,11 @@ module Tron
         prices
       end
 
+      # Formats a price value for display
+      #
+      # @param price [Float, nil] the price value
+      # @param currency [String] the currency symbol (default: 'USD')
+      # @return [String] the formatted price
       def format_price(price, currency = 'USD')
         if price.nil?
           '(price unavailable)'
@@ -146,6 +175,9 @@ module Tron
         end
       end
 
+      # Gets cache statistics for the price service
+      #
+      # @return [Hash] a hash containing cache statistics
       def cache_stats
         total = @cache_hits + @cache_misses
         {
@@ -156,6 +188,7 @@ module Tron
         }
       end
 
+      # Clears the cache for the price service
       def clear_cache
         @cache&.clear
         @cache_hits = 0
@@ -164,10 +197,17 @@ module Tron
 
       private
 
+      # Generates a cache key for a specific token
+      #
+      # @param token [String] the token symbol
+      # @return [String] the cache key
       def cache_key_for(token)
         "price:#{token.downcase}:#{@config.network}"
       end
 
+      # Creates headers for the Tronscan API
+      #
+      # @return [Hash] the Tronscan API headers
       def tronscan_headers
         headers = { 'accept' => 'application/json' }
         headers['TRON-PRO-API-KEY'] = @config.tronscan_api_key if @config.tronscan_api_key

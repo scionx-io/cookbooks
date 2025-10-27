@@ -16,7 +16,10 @@ module Tron
       }.freeze
 
       # Parse function signature
-      # Example: "registerOperator()" or "splitPayment(address,address,uint256,address,uint256,bytes16)"
+      #
+      # @param signature [String] the function signature to parse
+      # @return [Hash] a hash with :name and :params keys
+      # @raise [ArgumentError] if the signature is invalid
       def self.parse_signature(signature)
         match = signature.match(/^(\w+)\((.*)\)$/)
         raise ArgumentError, "Invalid function signature: #{signature}" unless match
@@ -28,6 +31,10 @@ module Tron
       end
 
       # Encode function call
+      #
+      # @param signature [String] the function signature
+      # @param parameters [Array] the parameter values
+      # @return [String] the encoded function call
       def self.encode_function_call(signature, parameters = [])
         parsed = parse_signature(signature)
 
@@ -41,6 +48,9 @@ module Tron
       end
 
       # Function selector (4-byte hash)
+      #
+      # @param signature [String] the function signature
+      # @return [String] the 4-byte function selector as hex
       def self.function_selector(signature)
         require 'digest'
         # Note: TRON uses same ABI as Ethereum
@@ -51,6 +61,11 @@ module Tron
       end
 
       # Encode parameters
+      #
+      # @param types [Array<String>] the parameter types
+      # @param values [Array] the parameter values
+      # @return [String] the encoded parameters as hex
+      # @raise [ArgumentError] if there's a mismatch between types and values
       def self.encode_parameters(types, values)
         raise ArgumentError, "Types and values length mismatch" if types.length != values.length
 
@@ -98,6 +113,11 @@ module Tron
       end
 
       # Encode a single value
+      #
+      # @param type [String] the type to encode
+      # @param value [Object] the value to encode
+      # @return [String] the encoded value as hex
+      # @raise [ArgumentError] if the type is unsupported
       def self.encode_value(type, value)
         case type
         when 'address'
@@ -116,6 +136,9 @@ module Tron
       end
 
       # Encode TRON address (T address to hex)
+      #
+      # @param address [String] the TRON address to encode
+      # @return [String] the encoded address as hex
       def self.encode_address(address)
         # Convert TRON T-address to hex address
         # Remove 'T' prefix, convert base58 to hex, pad to 32 bytes
@@ -124,16 +147,26 @@ module Tron
       end
 
       # Encode uint256
+      #
+      # @param value [Integer, String] the value to encode
+      # @return [String] the encoded uint256 as hex
       def self.encode_uint256(value)
         value.to_i.to_s(16).rjust(64, '0')
       end
 
       # Encode bool
+      #
+      # @param value [Boolean] the boolean value to encode
+      # @return [String] the encoded boolean as hex
       def self.encode_bool(value)
         value ? '1'.rjust(64, '0') : '0'.rjust(64, '0')
       end
 
       # Encode bytes
+      #
+      # @param size [Integer] the size of the bytes type
+      # @param value [String] the value to encode
+      # @return [String] the encoded bytes as hex
       def self.encode_bytes(size, value)
         hex = value.is_a?(String) ? value.unpack1('H*') : value.to_s
         # Limit to the size of the bytes type and pad to 32 bytes
@@ -142,6 +175,9 @@ module Tron
       end
 
       # Encode string
+      #
+      # @param value [String] the string to encode
+      # @raise [NotImplementedError] since string encoding is handled separately
       def self.encode_string(value)
         # For dynamic types like string, return the length and data separately
         # This will be handled by the main encode_parameters method
@@ -149,6 +185,9 @@ module Tron
       end
 
       # Encode bytes (dynamic type)
+      #
+      # @param value [String] the bytes value to encode
+      # @return [String] the encoded dynamic bytes as hex
       def self.encode_bytes_dynamic(value)
         # For dynamic bytes, encode length and data
         bytes_data = value.is_a?(String) ? value : value.to_s
@@ -163,6 +202,10 @@ module Tron
       end
 
       # Decode output
+      #
+      # @param type [String] the type to decode
+      # @param hex_data [String] the hex data to decode
+      # @return [Object] the decoded value
       def self.decode_output(type, hex_data)
         case type
         when 'bool'
@@ -177,6 +220,11 @@ module Tron
       end
 
       # Decodes parameters based on ABI types
+      #
+      # @param types [Array<String>] the types to decode
+      # @param data [String] the hex data to decode
+      # @return [Array] the decoded values
+      # @raise [ArgumentError] if the data is invalid or type is unsupported
       def self.decode_parameters(types, data)
         # Remove '0x' prefix if present
         raw_data = data.start_with?('0x') ? data[2..-1] : data
@@ -235,6 +283,11 @@ module Tron
       private
 
       # Helper method to encode dynamic parameters
+      #
+      # @param type [String] the dynamic type ('string' or 'bytes')
+      # @param value [Object] the value to encode
+      # @return [String] the encoded dynamic parameter as hex
+      # @raise [ArgumentError] if the type is unsupported
       def self.encode_dynamic_parameter(type, value)
         if type.start_with?('string')
           # For strings, we need to encode length and data

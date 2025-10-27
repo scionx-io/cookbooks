@@ -3,9 +3,14 @@ require 'monitor'
 
 module Tron
   module Utils
+    # A thread-safe rate limiter that limits requests based on a maximum number of requests within a specific time window
     class RateLimiter
       include MonitorMixin
 
+      # Creates a new rate limiter instance
+      #
+      # @param max_requests [Integer] maximum number of requests allowed in the time window
+      # @param time_window [Float] time window in seconds
       def initialize(max_requests:, time_window:)
         super()
         @max_requests = max_requests
@@ -13,6 +18,9 @@ module Tron
         @request_timestamps = []
       end
 
+      # Checks if a request can be made without exceeding the rate limit
+      #
+      # @return [Boolean] true if a request can be made, false otherwise
       def can_make_request?
         synchronize do
           cleanup_old_requests
@@ -20,6 +28,10 @@ module Tron
         end
       end
 
+      # Executes a request, blocking if necessary to respect the rate limit
+      # This method will sleep if necessary to ensure the rate limit is not exceeded
+      #
+      # @return [Float] the time until the next request is allowed
       def execute_request
         synchronize do
           cleanup_old_requests
@@ -40,11 +52,15 @@ module Tron
 
       private
 
+      # Removes timestamps that are outside the time window
       def cleanup_old_requests
         now = Time.now.to_f
         @request_timestamps.reject! { |timestamp| now - timestamp > @time_window }
       end
 
+      # Calculates the time until the next request is allowed
+      #
+      # @return [Float] the time in seconds until the next request is allowed
       def calculate_time_to_next_request
         if @request_timestamps.length <= 1
           0
