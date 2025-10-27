@@ -21,10 +21,11 @@ Gem::Specification.new do |spec|
   spec.executables   = ['tron-wallet']
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'base58', '~> 0.2'
+  spec.add_dependency 'base58-alphabets', '~> 1.0'
   spec.add_dependency 'dotenv', '~> 2.7'
-  spec.add_dependency 'digest-sha3', '~> 1.1'  # For keccak256
+  spec.add_dependency 'keccak', '~> 1.3'       # For keccak256 (replaces digest-sha3)
   spec.add_dependency 'rbsecp256k1', '~> 5.1'  # For signing
+  spec.add_dependency 'google-protobuf', '~> 3.22'  # For TRON Protocol Buffer serialization
 
   spec.add_development_dependency 'bundler', '~> 2.0'
   spec.add_development_dependency 'rake', '~> 13.0'

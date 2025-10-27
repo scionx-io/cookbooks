@@ -6,9 +6,23 @@ require_relative 'services/price'
 require_relative 'services/contract'
 
 module Tron
+  # The main client class for interacting with the TRON blockchain
+  # Provides methods for checking balances, resources, prices, and contract interactions
   class Client
     attr_reader :configuration
 
+    # Creates a new client instance with the given options
+    #
+    # @param options [Hash] configuration options
+    # @option options [String] :api_key TronGrid API key
+    # @option options [String] :tronscan_api_key Tronscan API key
+    # @option options [Symbol] :network network to use (:mainnet, :shasta, :nile)
+    # @option options [Integer] :timeout timeout for API requests
+    # @option options [Boolean] :cache_enabled whether caching is enabled
+    # @option options [Integer] :cache_ttl cache TTL in seconds
+    # @option options [Integer] :cache_max_stale max stale time in seconds
+    # @option options [String] :default_address default address for read-only calls
+    # @option options [Integer] :fee_limit default fee limit for transactions
     def initialize(options = {})
       @configuration = Configuration.new
       
@@ -24,31 +38,54 @@ module Tron
       @configuration.tronscan_api_key ||= ENV['TRONSCAN_API_KEY']
     end
 
+    # Configures the default client
+    #
+    # @yield [config] block to configure the client
+    # @yieldparam [Tron::Configuration] config the configuration object
     def self.configure
       yield configuration if block_given?
     end
 
+    # Returns the default configuration
+    #
+    # @return [Tron::Configuration] the configuration object
     def self.configuration
       @configuration ||= Configuration.new
     end
 
+    # Returns the balance service instance
+    #
+    # @return [Tron::Services::Balance] the balance service
     def balance_service
       @balance_service ||= Services::Balance.new(@configuration)
     end
 
+    # Returns the resources service instance
+    #
+    # @return [Tron::Services::Resources] the resources service
     def resources_service
       @resources_service ||= Services::Resources.new(@configuration)
     end
 
+    # Returns the price service instance
+    #
+    # @return [Tron::Services::Price] the price service
     def price_service
       @price_service ||= Services::Price.new(@configuration)
     end
 
+    # Returns the contract service instance
+    #
+    # @return [Tron::Services::Contract] the contract service
     def contract_service
       @contract_service ||= Services::Contract.new(@configuration)
     end
 
-    # Convenience methods that combine multiple services
+    # Get wallet balance information including TRX and TRC20 tokens
+    #
+    # @param address [String] TRON address to check
+    # @param strict [Boolean] whether to enable strict validation
+    # @return [Hash] balance information hash
     def get_wallet_balance(address, strict: false)
       validate_address!(address)
       
@@ -59,6 +96,11 @@ module Tron
       }
     end
 
+    # Get complete account information including balances and resources
+    #
+    # @param address [String] TRON address to check
+    # @param strict [Boolean] whether to enable strict validation
+    # @return [Hash] full account information hash
     def get_full_account_info(address, strict: false)
       validate_address!(address)
       
@@ -70,6 +112,11 @@ module Tron
       }
     end
 
+    # Get wallet portfolio including balances converted to USD values
+    #
+    # @param address [String] TRON address to check
+    # @param include_zero_balances [Boolean] whether to include tokens with zero balance
+    # @return [Hash] portfolio information with USD values
     def get_wallet_portfolio(address, include_zero_balances: false)
       validate_address!(address)
 
@@ -125,10 +172,16 @@ module Tron
       }
     end
 
+    # Check if caching is enabled
+    #
+    # @return [Boolean] true if caching is enabled
     def cache_enabled?
       configuration.cache_enabled
     end
 
+    # Get cache statistics
+    #
+    # @return [Hash] cache statistics for different services
     def cache_stats
       {
         price: price_service.cache_stats,
@@ -136,6 +189,7 @@ module Tron
       }
     end
 
+    # Clear all caches
     def clear_cache
       price_service.clear_cache
       balance_service.clear_cache
@@ -143,6 +197,10 @@ module Tron
 
     private
 
+    # Validates a TRON address
+    #
+    # @param address [String] TRON address to validate
+    # @raise [ArgumentError] if the address is invalid
     def validate_address!(address)
       require_relative 'utils/address'
       raise ArgumentError, "Invalid TRON address: #{address}" unless Utils::Address.validate(address)

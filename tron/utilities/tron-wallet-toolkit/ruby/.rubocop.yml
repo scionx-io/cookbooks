@@ -1,0 +1,284 @@
+AllCops:
+  TargetRubyVersion: 2.7
+  NewCops: enable
+  Exclude:
+    - "bin/**/*"
+    - "vendor/**/*"
+    - "tmp/**/*"
+    - "Gemfile"
+    - "Rakefile"
+
+Style/StringLiterals:
+  Enabled: true
+  EnforcedStyle: single_quotes
+
+Style/StringLiteralsInInterpolation:
+  Enabled: true
+  EnforcedStyle: single_quotes
+
+Layout/LineLength:
+  Max: 120
+  Exclude:
+    - "test/**/*"
+
+Metrics/MethodLength:
+  Max: 20
+
+Metrics/AbcSize:
+  Max: 20
+
+Metrics/CyclomaticComplexity:
+  Max: 10
+
+Metrics/PerceivedComplexity:
+  Max: 10
+
+Style/Documentation:
+  Enabled: false
+
+Style/BlockDelimiters:
+  Enabled: false
+
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+Style/EachForSimpleLoop:
+  Enabled: false
+
+Style/AndOr:
+  Enabled: true
+  EnforcedStyle: conditionals
+
+Style/ConditionalAssignment:
+  Enabled: false
+
+Style/FormatString:
+  Enabled: false
+
+Style/GuardClause:
+  Enabled: false
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/MethodDefParentheses:
+  Enabled: true
+
+Style/PercentLiteralDelimiters:
+  Enabled: false
+
+Style/PreferredHashMethods:
+  Enabled: true
+
+Style/RedundantReturn:
+  Enabled: false
+
+Style/Semicolon:
+  Enabled: false
+
+Style/SignalException:
+  Enabled: true
+  EnforcedStyle: only_raise
+
+Style/TrailingCommaInArguments:
+  Enabled: true
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/TrailingCommaInArrayLiteral:
+  Enabled: true
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/TrailingCommaInHashLiteral:
+  Enabled: true
+  EnforcedStyleForMultiline: consistent_comma
+
+Layout/HashAlignment:
+  Enabled: false
+
+Layout/ExtraSpacing:
+  Enabled: false
+
+Naming/FileName:
+  Exclude:
+    - "lib/tron.rb"
+
+Layout/ParameterAlignment:
+  EnforcedStyle: with_fixed_indentation
+
+Layout/FirstArrayElementIndentation:
+  EnforcedStyle: consistent
+
+Layout/FirstHashElementIndentation:
+  EnforcedStyle: consistent
+
+Layout/DotPosition:
+  EnforcedStyle: trailing
+
+Layout/TrailingEmptyLines:
+  Enabled: true
+  EnforcedStyle: final_newline
+
+Layout/TrailingWhitespace:
+  Enabled: true
+
+Layout/EmptyLines:
+  Enabled: true
+
+Layout/EmptyLineAfterMagicComment:
+  Enabled: true
+
+Style/CommentedKeyword:
+  Enabled: true
+
+Style/RedundantParentheses:
+  Enabled: false
+
+Style/IfInsideElse:
+  Enabled: false
+
+Style/UnpackFirst:
+  Enabled: false
+
+Style/NumericPredicate:
+  Enabled: false
+
+Style/Next:
+  Enabled: false
+
+Style/IdenticalConditionalBranches:
+  Enabled: true
+
+Style/NilComparison:
+  Enabled: false
+
+Style/OptionalBooleanParameter:
+  Enabled: false
+
+Style/MultilineBlockChain:
+  Enabled: false
+
+Style/FormatStringToken:
+  Enabled: false
+
+Style/GlobalStdStream:
+  Enabled: false
+
+Style/ExponentialNotation:
+  Enabled: false
+
+Style/SymbolArray:
+  Enabled: false
+
+Style/WordArray:
+  Enabled: false
+
+Style/ArrayJoin:
+  Enabled: false
+
+Style/MethodCalledOnDoEndBlock:
+  Enabled: false
+
+Style/MultipleComparison:
+  Enabled: false
+
+Style/Not:
+  Enabled: false
+
+Style/NumericLiteralPrefix:
+  Enabled: false
+
+Lint/MissingSuper:
+  Enabled: false
+
+Style/HashAsLastArrayItem:
+  Enabled: false
+
+Style/CombinableLoops:
+  Enabled: false
+
+Style/ExplicitBlockArgument:
+  Enabled: false
+
+Style/NilLambda:
+  Enabled: false
+
+Style/OptionalArguments:
+  Enabled: false
+
+Style/RedundantException:
+  Enabled: false
+
+Style/RedundantArgument:
+  Enabled: false
+
+Style/RedundantAssignment:
+  Enabled: false
+
+Style/RedundantInterpolation:
+  Enabled: false
+
+Style/RedundantSelf:
+  Enabled: false
+
+Style/SwapValues:
+  Enabled: false
+
+Style/YodaExpression:
+  Enabled: false
+
+Style/VariableInterpolation:
+  Enabled: false
+
+Style/RedundantCapitalW:
+  Enabled: false
+
+Style/RedundantCondition:
+  Enabled: false
+
+Style/RedundantConditional:
+  Enabled: false
+
+Style/RedundantConstantBase:
+  Enabled: false
+
+Style/RedundantFreeze:
+  Enabled: false
+
+Style/RedundantRegexpEscape:
+  Enabled: false
+
+Lint/RedundantRegexpQuantifiers:
+  Enabled: false
+
+Style/RedundantSelfAssignment:
+  Enabled: false
+
+Style/RedundantSort:
+  Enabled: false
+
+Style/RedundantStringEscape:
+  Enabled: false
+
+Style/Sample:
+  Enabled: false
+
+Style/SingleLineBlockParams:
+  Enabled: false
+
+Style/SingleLineMethods:
+  Enabled: false
+
+Style/SlicingWithRange:
+  Enabled: false
+
+Style/SoleNestedConditional:
+  Enabled: false
+
+Style/StderrPuts:
+  Enabled: false
+
+Style/StructInheritance:
+  Enabled: false
+
+Style/SymbolProc:
+  Enabled: false

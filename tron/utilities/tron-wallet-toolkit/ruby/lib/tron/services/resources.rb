@@ -4,11 +4,20 @@ require_relative '../utils/address'
 
 module Tron
   module Services
+    # The Resources service handles retrieving account resources (bandwidth, energy, storage) for TRON addresses
     class Resources
+      # Creates a new instance of the Resources service
+      #
+      # @param config [Tron::Configuration] the configuration object
       def initialize(config)
         @config = config
       end
 
+      # Gets the account resources for a given address
+      #
+      # @param address [String] the TRON address to check
+      # @return [Hash] a hash containing resource information
+      # @raise [ArgumentError] if the address is invalid
       def get(address)
         validate_address!(address)
         
@@ -23,6 +32,10 @@ module Tron
 
       private
 
+      # Gets account resources using the getaccountresource endpoint
+      #
+      # @param address [String] the TRON address to check
+      # @return [Hash] a hash containing resource information
       def get_account_resources(address)
         url = "#{@config.base_url}/wallet/getaccountresource"
         headers = api_headers
@@ -68,6 +81,10 @@ module Tron
         }
       end
 
+      # Gets account resources using the getaccount endpoint as a fallback
+      #
+      # @param address [String] the TRON address to check
+      # @return [Hash] a hash containing resource information
       def get_account_resources_fallback(address)
         url = "#{@config.base_url}/wallet/getaccount"
         headers = api_headers
@@ -100,16 +117,26 @@ module Tron
         }
       end
 
+      # Validates a TRON address
+      #
+      # @param address [String] the address to validate
+      # @raise [ArgumentError] if the address is invalid
       def validate_address!(address)
         raise ArgumentError, "Invalid TRON address: #{address}" unless Utils::Address.validate(address)
       end
 
+      # Creates headers for the TRON API
+      #
+      # @return [Hash] the API headers
       def api_headers
         headers = { 'accept' => 'application/json', 'Content-Type' => 'application/json' }
         headers['TRON-PRO-API-KEY'] = @config.api_key if @config.api_key
         headers
       end
 
+      # Returns default resource values
+      #
+      # @return [Hash] a hash with zero resource values
       def default_resources
         {
           bandwidth: 0,

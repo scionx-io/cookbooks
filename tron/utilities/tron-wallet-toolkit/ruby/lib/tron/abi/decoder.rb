@@ -1,0 +1,172 @@
+# frozen_string_literal: true
+require_relative 'util'
+require_relative 'constant'
+
+module Tron
+  module Abi
+    # Provides a utility module to assist decoding ABIs.
+    module Decoder
+      extend self
+
+      # Decodes a specific value, either static or dynamic.
+      #
+      # @param type [Tron::Abi::Type] type to be decoded.
+      # @param arg [String] encoded type data string.
+      # @return [String] the decoded data for the type.
+      # @raise [DecodingError] if decoding fails for type.
+      def type(type, arg)
+        if %w(string bytes).include?(type.base_type) and type.sub_type.empty?
+          # Case: decoding a string/bytes
+          if type.dimensions.empty?
+            l = Util.deserialize_big_endian_to_int arg[0, 32]
+            data = arg[32..-1]
+            raise DecodingError, "Wrong data size for string/bytes object" unless data.size == Util.ceil32(l)
+
+            # decoded strings and bytes
+            data[0, l]
+            # Case: decoding array of string/bytes
+          else
+            l = Util.deserialize_big_endian_to_int arg[0, 32]
+            raise DecodingError, "Wrong data size for dynamic array" unless arg.size >= 32 + 32 * l
+
+            # Decode each element of the array
+            (1..l).map do |i|
+              pointer = Util.deserialize_big_endian_to_int arg[i * 32, 32] # Pointer to the size of the array's element
+              raise DecodingError, "Offset out of bounds" if pointer < 32 * l || pointer > arg.size - 64
+              data_l = Util.deserialize_big_endian_to_int arg[32 + pointer, 32] # length of the element
+              raise DecodingError, "Offset out of bounds" if pointer + 32 + Util.ceil32(data_l) > arg.size
+              type(Type.parse(type.base_type), arg[pointer + 32, Util.ceil32(data_l) + 32])
+            end
+          end
+        elsif type.base_type == "tuple" && type.dimensions.empty?
+          offset = 0
+          result = []
+          raise DecodingError, "Cannot decode tuples without known components" if type.components.nil?
+          type.components.each_with_index do |c, i|
+            if c.dynamic?
+              pointer = Util.deserialize_big_endian_to_int arg[offset, 32]
+              next_offset = if i + 1 < type.components.size
+                  Util.deserialize_big_endian_to_int arg[offset + 32, 32]
+                else
+                  arg.size
+                end
+              raise DecodingError, "Offset out of bounds" if pointer > arg.size || next_offset > arg.size || next_offset < pointer
+              result << type(c, arg[pointer, next_offset - pointer])
+              offset += 32
+            else
+              size = c.size
+              raise DecodingError, "Offset out of bounds" if offset + size > arg.size
+              result << type(c, arg[offset, size])
+              offset += size
+            end
+          end
+          result
+        elsif type.dynamic?
+          l = Util.deserialize_big_endian_to_int arg[0, 32]
+          nested_sub = type.nested_sub
+
+          if nested_sub.dynamic?
+            raise DecodingError, "Wrong data size for dynamic array" unless arg.size >= 32 + 32 * l
+            offsets = (0...l).map do |i|
+              off = Util.deserialize_big_endian_to_int arg[32 + 32 * i, 32]
+              raise DecodingError, "Offset out of bounds" if off < 32 * l || off > arg.size - 64
+              off
+            end
+            offsets.map { |off| type(nested_sub, arg[32 + off..]) }
+          else
+            raise DecodingError, "Wrong data size for dynamic array" unless arg.size >= 32 + nested_sub.size * l
+            # decoded dynamic-sized arrays with static sub-types
+            (0...l).map { |i| type(nested_sub, arg[32 + nested_sub.size * i, nested_sub.size]) }
+          end
+        elsif !type.dimensions.empty?
+          l = type.dimensions.first
+          nested_sub = type.nested_sub
+
+          if nested_sub.dynamic?
+            raise DecodingError, "Wrong data size for static array" unless arg.size >= 32 * l
+            offsets = (0...l).map do |i|
+              off = Util.deserialize_big_endian_to_int arg[32 * i, 32]
+              raise DecodingError, "Offset out of bounds" if off < 32 * l || off > arg.size - 32
+              off
+            end
+            offsets.each_with_index.map do |off, i|
+              size = (i + 1 < offsets.length ? offsets[i + 1] : arg.size) - off
+              type(nested_sub, arg[off, size])
+            end
+          else
+            # decoded static-size arrays with static sub-types
+            (0...l).map { |i| type(nested_sub, arg[nested_sub.size * i, nested_sub.size]) }
+          end
+        else
+
+          # decoded primitive types
+          primitive_type type, arg
+        end
+      end
+
+      # Decodes primitive types.
+      #
+      # @param type [Tron::Abi::Type] type to be decoded.
+      # @param data [String] encoded primitive type data string.
+      # @return [String] the decoded data for the type.
+      # @raise [DecodingError] if decoding fails for type.
+      def primitive_type(type, data)
+        case type.base_type
+        when "address"
+          # Handle TRON-specific address decoding
+          # Take the last 20 bytes (40 hex chars) and convert to TRON address
+          addr_hex = data[24*2..-1]  # Skip first 24 bytes, take last 20
+          
+          require_relative '../utils/address'
+          # Convert 40 hex chars (20 bytes) to TRON address
+          Utils::Address.to_base58(Tron::Key::ADDRESS_PREFIX + addr_hex)
+        when "string", "bytes"
+          if type.sub_type.empty?
+            size = Util.deserialize_big_endian_to_int data[0, 32]
+
+            # decoded dynamic-sized array
+            decoded = data[32..-1][0, size]
+            decoded.force_encoding(Encoding::UTF_8)
+            decoded
+          else
+
+            # decoded static-sized array
+            data[0, type.sub_type.to_i]
+          end
+        when "hash"
+
+          # decoded hash
+          data[(32 - type.sub_type.to_i), type.sub_type.to_i]
+        when "uint"
+
+          # decoded unsigned integer
+          Util.deserialize_big_endian_to_int data
+        when "int"
+          u = Util.deserialize_big_endian_to_int data
+          i = u >= 2 ** (type.sub_type.to_i - 1) ? (u - 2 ** 256) : u
+
+          # decoded integer
+          i
+        when "ureal", "ufixed"
+          high, low = type.sub_type.split("x").map(&:to_i)
+
+          # decoded unsigned fixed point numeric
+          Util.deserialize_big_endian_to_int(data) * 1.0 / 2 ** low
+        when "real", "fixed"
+          high, low = type.sub_type.split("x").map(&:to_i)
+          u = Util.deserialize_big_endian_to_int data
+          i = u >= 2 ** (high + low - 1) ? (u - 2 ** (high + low)) : u
+
+          # decoded fixed point numeric
+          i * 1.0 / 2 ** low
+        when "bool"
+
+          # decoded boolean
+          data[-1] == Constant::BYTE_ONE
+        else
+          raise DecodingError, "Unknown primitive type: #{type.base_type}"
+        end
+      end
+    end
+  end
+end

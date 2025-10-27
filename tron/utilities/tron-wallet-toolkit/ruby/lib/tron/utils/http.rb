@@ -6,6 +6,7 @@ require 'digest'
 
 module Tron
   module Utils
+    # HTTP utility class that handles HTTP requests with caching and error handling
     class HTTP
       # TTL values for different endpoint types (in seconds)
       # These are optimized based on data volatility
@@ -26,7 +27,8 @@ module Tron
         default: { ttl: 300, max_stale: 600 }
       }.freeze
 
-      # GET request with optional caching
+      # Makes a GET request with optional caching
+      #
       # @param url [String] the URL to request
       # @param headers [Hash] request headers
       # @param cache_options [Hash] optional cache configuration
@@ -34,6 +36,7 @@ module Tron
       # @option cache_options [Integer] :ttl custom TTL in seconds
       # @option cache_options [Integer] :max_stale custom max_stale in seconds
       # @option cache_options [Symbol] :endpoint_type endpoint type for TTL lookup
+      # @return [Hash, Array] the parsed JSON response
       def self.get(url, headers = {}, cache_options = {})
         if should_use_cache?(cache_options)
           cache_key = generate_cache_key('GET', url, headers)
@@ -47,7 +50,12 @@ module Tron
         end
       end
 
-      # POST request (no caching for mutations)
+      # Makes a POST request (no caching for mutations)
+      #
+      # @param url [String] the URL to request
+      # @param payload [Hash, String] the request payload
+      # @param cache_options [Hash] optional cache configuration (unused for POST)
+      # @return [Hash, Array] the parsed JSON response
       def self.post(url, payload, cache_options = {})
         require 'net/http'
         require 'json'
@@ -68,6 +76,7 @@ module Tron
       end
 
       # Clear cache for a specific endpoint
+      #
       # @param url [String] the URL to clear from cache
       # @param headers [Hash] request headers used in the original request
       def self.clear_cache(url, headers = {})
@@ -76,8 +85,10 @@ module Tron
       end
 
       # Get cache statistics for an endpoint
+      #
       # @param url [String] the URL to get stats for
       # @param headers [Hash] request headers used in the original request
+      # @return [Hash] cache statistics for the endpoint
       def self.cache_stats(url, headers = {})
         cache_key = generate_cache_key('GET', url, headers)
         Tron::Cache.stats(cache_key)
@@ -86,6 +97,9 @@ module Tron
       private
 
       # Determine if caching should be used for this request
+      #
+      # @param cache_options [Hash] the cache configuration options
+      # @return [Boolean] true if caching should be used
       def self.should_use_cache?(cache_options)
         # Check if caching is explicitly disabled for this request
         return false if cache_options[:enabled] == false
@@ -95,6 +109,9 @@ module Tron
       end
 
       # Get TTL configuration for the request
+      #
+      # @param cache_options [Hash] the cache configuration options
+      # @return [Hash] TTL configuration with :ttl and :max_stale values
       def self.get_ttl_config(cache_options)
         # If custom TTL provided, use it
         if cache_options[:ttl] && cache_options[:max_stale]
@@ -119,6 +136,11 @@ module Tron
       end
 
       # Generate a unique cache key based on request parameters
+      #
+      # @param method [String] the HTTP method
+      # @param url [String] the request URL
+      # @param headers [Hash] the request headers
+      # @return [String] the cache key
       def self.generate_cache_key(method, url, headers)
         # Include method, URL, and relevant headers in the cache key
         # Exclude headers that don't affect the response (like User-Agent)
@@ -127,6 +149,14 @@ module Tron
         Digest::SHA256.hexdigest(key_parts.to_json)
       end
 
+      # Makes an HTTP request
+      #
+      # @param method_class [Class] the HTTP method class (e.g. Net::HTTP::Get)
+      # @param url [String] the URL to request
+      # @param body [String] the request body
+      # @param headers [Hash] the request headers
+      # @return [Hash, Array] the parsed JSON response
+      # @raise [RuntimeError] if the request fails
       def self.make_request(method_class, url, body, headers)
         uri = URI(url)
         http = Net::HTTP.new(uri.host, uri.port)

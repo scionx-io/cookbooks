@@ -1,28 +1,45 @@
 require_relative '../utils/http'
-require_relative '../utils/abi'
 require_relative '../utils/address'
+require_relative '../abi'
 require_relative 'transaction'
 
 module Tron
   module Services
+    # The Contract service handles interactions with TRON smart contracts
+    # including both read-only calls and state-changing transactions
     class Contract
+      # Creates a new instance of the Contract service
+      #
+      # @param configuration [Tron::Configuration] the configuration object
       def initialize(configuration)
         @configuration = configuration
         @base_url = configuration.base_url
         @transaction_service = Transaction.new(configuration)
       end
 
-      # Trigger smart contract (state-changing operation)
-      # Returns transaction result
+      # Triggers a smart contract (state-changing operation)
+      # This creates and broadcasts a transaction to the blockchain
+      #
+      # @param contract_address [String] the contract address to interact with
+      # @param function [String] the function to call on the contract
+      # @param parameters [Array] the parameters to pass to the function
+      # @param private_key [String] the private key to sign the transaction
+      # @param fee_limit [Integer] the maximum energy fee to pay (default: configuration default)
+      # @param call_value [Integer] the amount of TRX to send with the call (default: 0)
+      # @param owner_address [String] the address of the transaction originator (default: derived from private key)
+      # @return [Hash] the transaction result
       def trigger_contract(
         contract_address:,
         function:,
         parameters: [],
         private_key:,
-        fee_limit: 100_000_000,
+        fee_limit: nil,
         call_value: 0,
         owner_address: nil
       )
+        # Use configuration default if fee_limit not provided
+        fee_limit ||= @configuration.fee_limit
+
         # Derive owner address from private key if not provided
         owner_address ||= derive_address_from_private_key(private_key)
 
@@ -44,8 +61,14 @@ module Tron
         @transaction_service.sign_and_broadcast(transaction, private_key)
       end
 
-      # Call smart contract (read-only operation)
-      # Returns the result without creating a transaction
+      # Calls a smart contract (read-only operation)
+      # This does not create a transaction and doesn't change blockchain state
+      #
+      # @param contract_address [String] the contract address to interact with
+      # @param function [String] the function to call on the contract
+      # @param parameters [Array] the parameters to pass to the function
+      # @param owner_address [String] the address of the caller (default: configuration default)
+      # @return [Hash] the result of the function call
       def call_contract(
         contract_address:,
         function:,
@@ -80,7 +103,12 @@ module Tron
         parse_constant_result(response)
       end
 
-      # Check if payment is processed (example helper)
+      # Checks if a payment has been processed (example helper)
+      #
+      # @param contract_address [String] the contract address
+      # @param operator_address [String] the operator's address
+      # @param payment_id [String] the payment ID
+      # @return [Boolean] true if the payment is processed, false otherwise
       def payment_processed?(contract_address, operator_address, payment_id)
         result = call_contract(
           contract_address: contract_address,
@@ -91,7 +119,11 @@ module Tron
         Utils::ABI.decode_output('bool', result)
       end
 
-      # Get fee destination (example helper)
+      # Gets the fee destination (example helper)
+      #
+      # @param contract_address [String] the contract address
+      # @param operator_address [String] the operator's address
+      # @return [String] the fee destination address
       def get_fee_destination(contract_address, operator_address)
         result = call_contract(
           contract_address: contract_address,
@@ -102,7 +134,11 @@ module Tron
         Utils::ABI.decode_output('address', result)
       end
 
-      # Check if operator is registered (example helper)
+      # Checks if an operator is registered (example helper)
+      #
+      # @param contract_address [String] the contract address
+      # @param operator_address [String] the operator's address
+      # @return [Boolean] true if the operator is registered, false otherwise
       def operator_registered?(contract_address, operator_address)
         result = call_contract(
           contract_address: contract_address,
@@ -115,6 +151,15 @@ module Tron
 
       private
 
+      # Builds a trigger transaction for a smart contract call
+      #
+      # @param contract_address [String] the contract address
+      # @param function [String] the function to call
+      # @param parameters [Array] the parameters to pass
+      # @param owner_address [String] the address of the transaction owner
+      # @param fee_limit [Integer] the maximum energy fee
+      # @param call_value [Integer] the value to send with the call
+      # @return [Hash] the transaction object
       def build_trigger_transaction(
         contract_address:,
         function:,
@@ -144,6 +189,10 @@ module Tron
         response['transaction']
       end
 
+      # Parses the result of a constant function call
+      #
+      # @param response [Hash] the API response
+      # @return [String] the parsed result
       def parse_constant_result(response)
         return nil unless response['result']
 
@@ -154,16 +203,23 @@ module Tron
         constant_result.first
       end
 
+      # Validates a TRON address
+      #
+      # @param address [String] the address to validate
+      # @raise [ArgumentError] if the address is invalid
       def validate_address!(address)
         require_relative '../utils/address'
         raise ArgumentError, "Invalid TRON address: #{address}" unless Utils::Address.validate(address)
       end
 
+      # Derives a TRON address from a private key
+      #
+      # @param private_key [String] the private key in hex format
+      # @return [String] the derived address
       def derive_address_from_private_key(private_key)
-        # This requires cryptographic operations
-        # Placeholder - implement using TronWeb or similar
-        # For now, require owner_address to be passed explicitly
-        raise ArgumentError, "Owner address derivation not implemented. Please provide owner_address parameter."
+        # Use the Key class to derive address from private key
+        key = Tron::Key.new(priv: private_key)
+        key.address
       end
     end
   end

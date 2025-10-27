@@ -3,9 +3,13 @@ require 'monitor'
 
 module Tron
   module Utils
+    # A simple thread-safe cache with time-based expiration
     class Cache
       include MonitorMixin
 
+      # Creates a new cache instance with the specified maximum age
+      #
+      # @param max_age [Integer] maximum age of cached entries in seconds (default: 300)
       def initialize(max_age: 300) # 5 minutes default
         super()
         @cache = {}
@@ -13,6 +17,11 @@ module Tron
         @max_age = max_age
       end
 
+      # Retrieves a value from the cache
+      # Automatically removes expired entries before retrieval
+      #
+      # @param key [Object] the cache key
+      # @return [Object, nil] the cached value or nil if not found or expired
       def get(key)
         synchronize do
           cleanup_expired_entries
@@ -25,6 +34,10 @@ module Tron
         end
       end
 
+      # Sets a value in the cache with the current timestamp
+      #
+      # @param key [Object] the cache key
+      # @param value [Object] the value to cache
       def set(key, value)
         synchronize do
           @cache[key] = value
@@ -32,6 +45,9 @@ module Tron
         end
       end
 
+      # Removes a specific key from the cache
+      #
+      # @param key [Object] the cache key to delete
       def delete(key)
         synchronize do
           @cache.delete(key)
@@ -39,6 +55,7 @@ module Tron
         end
       end
 
+      # Clears all entries from the cache
       def clear
         synchronize do
           @cache.clear
@@ -48,6 +65,7 @@ module Tron
 
       private
 
+      # Removes expired entries from the cache
       def cleanup_expired_entries
         now = Time.now.to_f
         expired_keys = @timestamps.select { |_, timestamp| now - timestamp > @max_age }.keys
