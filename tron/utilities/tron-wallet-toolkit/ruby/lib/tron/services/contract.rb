@@ -1,5 +1,6 @@
 require_relative '../utils/http'
 require_relative '../utils/address'
+require_relative '../utils/abi'
 require_relative '../abi'
 require_relative 'transaction'
 
@@ -85,11 +86,12 @@ module Tron
         endpoint = "#{@base_url}/wallet/triggerconstantcontract"
 
         # Encode function call
-        function_selector = Utils::ABI.encode_function_call(function, parameters)
+        encoded_data = Utils::ABI.encode_function_call(function, parameters)
 
+        # Use 'data' field instead of 'function_selector' (same as trigger_contract)
         payload = {
           contract_address: Utils::Address.to_hex(contract_address),
-          function_selector: function_selector,
+          data: encoded_data,
           owner_address: Utils::Address.to_hex(owner_address)
         }
 
@@ -170,12 +172,16 @@ module Tron
       )
         endpoint = "#{@base_url}/wallet/triggersmartcontract"
 
-        # Encode function call
-        function_selector = Utils::ABI.encode_function_call(function, parameters)
+        # Encode function call (selector + parameters)
+        encoded_data = Utils::ABI.encode_function_call(function, parameters)
 
+        # IMPORTANT: Use 'data' field, not 'function_selector'
+        # When function_selector is provided, the API expects it to be the signature string
+        # with parameters in a separate 'parameter' field.
+        # Using 'data' allows us to send the complete encoded call data.
         payload = {
           contract_address: Utils::Address.to_hex(contract_address),
-          function_selector: function_selector,
+          data: encoded_data,
           fee_limit: fee_limit,
           call_value: call_value,
           owner_address: Utils::Address.to_hex(owner_address)
