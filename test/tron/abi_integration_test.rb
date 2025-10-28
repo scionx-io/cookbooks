@@ -128,7 +128,7 @@ class AbiIntegrationTest < Minitest::Test
   def test_encode_known_transfer_function
     # transfer(address,uint256) with test values
     # This is a real-world scenario
-    address = 'TJRyWwFs9wkrx1UN2bCJNBYFv3nD82H6uq'
+    address = 'TJRyWwFs9wkrx1UN2bCJNBYFv3nD6HUGKN'
     amount = 1000000
 
     # Skip if address utilities not available
