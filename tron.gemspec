@@ -24,7 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'base58-alphabets', '~> 1.0'
   spec.add_dependency 'dotenv', '~> 2.8'
   spec.add_dependency 'keccak', '~> 1.3'       # For keccak256 (replaces digest-sha3)
-  spec.add_dependency 'rbsecp256k1', '~> 5.1'  # For signing
+  spec.add_dependency 'rbsecp256k1', '~> 6.0'  # For signing
   spec.add_dependency 'google-protobuf', '~> 3.22'  # For TRON Protocol Buffer serialization
 
   spec.add_development_dependency 'bundler', '~> 2.0'
