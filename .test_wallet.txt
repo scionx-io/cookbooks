@@ -1,0 +1,7 @@
+TRON TEST WALLET (Shasta Testnet)
+==================================
+Private Key: 89d8ed9610a755fe8e9fbe5d393718709d6e7b2bc6292599816d697561c75cd8
+Address: TCBRQoR8TQZNxnUgMVPev6eNCt61EHet9K
+Generated: 2025-10-27 14:50:24 -0400
+
+⚠️  FOR TESTING ONLY - DO NOT USE ON MAINNET
