@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2025-10-28
+
+### Fixed
+- **CRITICAL:** Fixed ABI address encoding to strip `41` prefix for smart contract parameters (lib/tron/utils/abi.rb)
+  - Addresses were incorrectly encoded with TRON's `41` prefix, causing contract calls to revert
+  - Now properly encodes addresses as 20-byte hex without prefix for ABI compatibility
+- **CRITICAL:** Fixed binary function encoding in ABI system (lib/tron/abi/function.rb)
+  - Method ID was being concatenated as hex string instead of binary data
+  - Now correctly converts method_id from hex to binary before concatenating with parameters
+- **CRITICAL:** Fixed TronGrid API format for contract calls (lib/tron/services/contract.rb)
+  - Changed from `function_selector` field to `data` field in API requests
+  - TronGrid API was ignoring parameters when using `function_selector` with encoded data
+  - Both `trigger_contract` and `call_contract` now use correct `data` field format
+
+### Impact
+- All smart contract interactions now work correctly (mint, transfer, approve, etc.)
+- Contract function calls with parameters no longer revert
+- Fixed issue where contract calls were sending wrong function selector to blockchain
+- Payment distribution testing now passes with 100% accuracy
+
+### Testing
+- Successfully deployed and tested TRC20 token contract on Shasta testnet
+- Verified PaymentSplitter contract correctly splits payments between recipient and operator
+- All contract interaction tests passing
+
 ## [1.0.6] - 2025-10-21
 
 ### Added

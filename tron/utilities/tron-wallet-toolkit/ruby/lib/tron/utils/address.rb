@@ -60,6 +60,14 @@ module Tron
       #
       # @param hex_address [String] the hex address to convert
       # @return [String] the address in Base58 format
+      def self.from_hex(hex_address)
+        to_base58(hex_address)
+      end
+
+      # Converts a hex address to Base58 format
+      #
+      # @param hex_address [String] the hex address to convert
+      # @return [String] the address in Base58 format
       def self.to_base58(hex_address)
         return hex_address if hex_address.start_with?('T') && hex_address.length == 34 # Already base58 format
 

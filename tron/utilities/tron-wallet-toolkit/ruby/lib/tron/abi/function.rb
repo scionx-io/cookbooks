@@ -64,7 +64,8 @@ module Tron
         end
 
         # Combine method ID and encoded parameters
-        @method_id + encoded_params.join
+        # Convert method_id from hex string to binary before concatenating
+        Util.hex_to_bin(@method_id) + encoded_params.join
       end
 
       # Decode function output from returned data

@@ -52,12 +52,12 @@ module Tron
       # @param signature [String] the function signature
       # @return [String] the 4-byte function selector as hex
       def self.function_selector(signature)
-        require 'digest'
+        require_relative 'crypto'
         # Note: TRON uses same ABI as Ethereum
-        # Using SHA3-256 (Keccak256) for hash
-        hash = Digest::SHA3.digest(signature, 256)
+        # Using Keccak256 for hash
+        hash = Crypto.keccak256(signature)
         # Take only the first 4 bytes (8 hex chars)
-        hash.unpack1('H*')[0..7]
+        Crypto.bin_to_hex(hash[0, 4])
       end
 
       # Encode parameters
@@ -143,6 +143,8 @@ module Tron
         # Convert TRON T-address to hex address
         # Remove 'T' prefix, convert base58 to hex, pad to 32 bytes
         hex = Address.to_hex(address)
+        # Strip the 41 prefix for ABI encoding (only use the 20-byte address)
+        hex = hex[2..-1] if hex.start_with?('41')
         hex.rjust(64, '0') # Pad to 64 hex chars (32 bytes)
       end
 
