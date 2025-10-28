@@ -19,27 +19,22 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          working-directory: tron/utilities/tron-wallet-toolkit/ruby
-          ruby-version: 2.7
+          ruby-version: '3.3'
           bundler-cache: true
 
       - name: Install dependencies
-        working-directory: tron/utilities/tron-wallet-toolkit/ruby
         run: |
           bundle install
 
       - name: Run tests
-        working-directory: tron/utilities/tron-wallet-toolkit/ruby
         run: |
           bundle exec rake test
 
       - name: Build gem
-        working-directory: tron/utilities/tron-wallet-toolkit/ruby
         run: |
           gem build tron.gemspec
 
       - name: Push gem to RubyGems
-        working-directory: tron/utilities/tron-wallet-toolkit/ruby
         run: |
           mkdir -p $HOME/.gem
           touch $HOME/.gem/credentials
@@ -52,5 +47,5 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: tron/utilities/tron-wallet-toolkit/ruby/*.gem
+          files: '*.gem'
           generate_release_notes: true

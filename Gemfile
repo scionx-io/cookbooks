@@ -2,10 +2,13 @@
 
 source "https://rubygems.org"
 
+gemspec
+
 gem "dotenv", "~> 2.8"
 gem "base58-alphabets", "~> 1.0"
 gem "rbsecp256k1", "~> 5.1"
 gem "keccak", "~> 1.3"
+gem "google-protobuf", "~> 3.22"
 
 group :development, :test do
   gem "bundler", "~> 2.4"
