@@ -82,7 +82,7 @@ module Tron
         # Skip if address utilities not available
         skip unless defined?(Tron::Utils::Address)
 
-        address = 'TJRyWwFs9wkrx1UN2bCJNBYFv3nD82H6uq'
+        address = 'TJRyWwFs9wkrx1UN2bCJNBYFv3nD6HUGKN'
         result = Encoder.type(Type.parse('address'), address)
         assert_equal 32, result.bytesize
         assert_equal Encoding::ASCII_8BIT, result.encoding
