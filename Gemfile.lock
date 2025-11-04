@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    tron.rb (1.1.9)
+    tron.rb (1.2.1)
       base58-alphabets (~> 1.0)
       dotenv (~> 2.8)
       google-protobuf (~> 3.22)
