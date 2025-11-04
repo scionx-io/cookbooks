@@ -89,7 +89,7 @@ module Tron
 
       function_name = match[1]
       param_types_str = match[2]
-      param_types = param_types_str.empty? ? [] : param_types_str.split(',').map(&:strip)
+      param_types = param_types_str.empty? ? [] : split_function_params(param_types_str)
 
       # Get function selector (first 4 bytes of keccak256 hash)
       require_relative 'utils/crypto'
@@ -103,6 +103,40 @@ module Tron
 
       encoded_params = encode(param_types, parameters)
       selector + encoded_params
+    end
+
+    # Splits function parameter types on commas, handling nested tuples.
+    # Based on eth.rb's split_tuple_types implementation.
+    #
+    # @param params_str [String] parameter types string
+    # @return [Array<String>] array of parameter type strings
+    def self.split_function_params(params_str)
+      types = []
+      depth = 0
+      current = ""
+
+      params_str.each_char do |ch|
+        case ch
+        when "("
+          depth += 1
+          current << ch
+        when ")"
+          depth -= 1
+          current << ch
+        when ","
+          if depth.zero?
+            types << current.strip
+            current = ""
+          else
+            current << ch
+          end
+        else
+          current << ch
+        end
+      end
+
+      types << current.strip unless current.empty?
+      types
     end
 
     # Decode output from a contract call
