@@ -5,12 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2025-11-04
+
+### Added
+- **Transaction Handling:** Added improved transaction confirmation and error handling
+  - Implemented `wait_for_transaction` method with progress indicator and confirmation polling
+  - Added `get_transaction_info` method for detailed transaction information
+  - Created `extract_revert_reason` method to decode smart contract error messages
+  - Enhanced transaction error reporting with detailed error codes and messages
+
+### Fixed
+- **Transaction Broadcasting:** Improved error handling for transaction broadcast failures
+  - Added detailed error messages with error codes when transactions fail
+  - Show full response for debugging purposes when transactions fail
+  - Better error reporting with transaction ID in broadcast failure cases
+
 ## [1.2.2] - 2025-11-04
 
 ### Fixed
 - **ABI Packed Encoder:** Added missing constants that were causing runtime errors
   - Added `UINT_MAX`, `UINT_MIN`, `INT_MAX`, and `INT_MIN` constants to `Tron::Abi::Constant`
   - Fixes 'uninitialized constant' error in packed encoder validation
+
+### Added
+- **Typed Data Signing:** Added support for structured data signing using TRON TIP-191 standard
+  - Implemented `sign_typed_data` method in `Tron::Key` for signing structured data
+  - Added proper TRON TIP-191 prefix (`\x19Tron Signed Message:\n32`) for typed data
+  - Updated signature format with v value adjusted to 27/28 as per standard
+
+### Changed
+- **ABI Utilities:** Enhanced `zpad_int` function with configurable padding length
+  - Modified `zpad_int` to accept optional `len` parameter (default: 32 bytes)
+  - Updated function to pad integers to specified number of bytes instead of fixed 32 bytes
+  - Maintains backward compatibility with existing code using default parameter
 
 ## [1.2.1] - 2025-11-04
 
@@ -103,6 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resources service for checking bandwidth and energy
 - CLI tool for wallet balance checking
 
+[1.2.3]: https://github.com/yourusername/tron.rb/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/yourusername/tron.rb/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/yourusername/tron.rb/compare/v1.1.2...v1.2.1
 [1.1.2]: https://github.com/yourusername/tron.rb/compare/v1.0.6...v1.1.2

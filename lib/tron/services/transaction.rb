@@ -41,6 +41,144 @@ module Tron
         Utils::HTTP.post(endpoint, payload)
       end
 
+      # Gets detailed transaction information by transaction ID (includes error details)
+      #
+      # @param tx_id [String] the transaction ID (txID)
+      # @return [Hash] the detailed transaction information from the blockchain
+      def get_transaction_info(tx_id)
+        endpoint = "#{@base_url}/wallet/gettransactioninfobyid"
+        payload = { value: tx_id }
+
+        Utils::HTTP.post(endpoint, payload)
+      end
+
+      # Waits for transaction confirmation
+      #
+      # @param tx_id [String] the transaction ID to wait for
+      # @param max_attempts [Integer] maximum number of attempts to check (default: 15)
+      # @return [Hash] the transaction information when confirmed
+      # @raise [RuntimeError] if transaction is reverted or times out
+      def wait_for_transaction(tx_id, max_attempts = 15)
+        print "Waiting for transaction: #{tx_id}"
+
+        max_attempts.times do |i|
+          sleep 2
+          print '.'
+
+          begin
+            tx_info = get_transaction(tx_id)
+
+            if tx_info && tx_info['ret'] && tx_info['ret'][0]
+              result = tx_info['ret'][0]['contractRet']
+
+              if result == 'SUCCESS'
+                puts "\n✓ Transaction confirmed"
+                return tx_info
+              end
+
+              if result == 'REVERT'
+                puts "\n❌ Transaction reverted"
+
+                # Get the actual revert reason from transaction info
+                error_message = extract_revert_reason(tx_id)
+
+                # Raise with just the error message
+                raise "Transaction failed: #{error_message}"
+              end
+            end
+          rescue RuntimeError => e
+            # If it's already a formatted error, re-raise it
+            raise e if e.message.start_with?('Transaction failed:')
+            # Transaction might not be available yet, continue waiting
+            next if i < max_attempts - 1
+            raise e
+          rescue => e
+            # Transaction might not be available yet, continue waiting
+            next if i < max_attempts - 1
+            raise e
+          end
+        end
+
+        raise 'Transaction timeout'
+      end
+
+      private
+
+      # Extracts the revert reason from a failed transaction
+      #
+      # @param tx_id [String] the transaction ID
+      # @return [String] the decoded error message
+      def extract_revert_reason(tx_id)
+        tx_detail = get_transaction_info(tx_id)
+
+        # Debug: Print the full transaction info
+        if ENV['DEBUG']
+          puts "\n🔍 DEBUG - Full transaction info:"
+          puts JSON.pretty_generate(tx_detail) rescue puts(tx_detail.inspect)
+        end
+
+        # Try to get error from contractResult (this contains the ABI-encoded revert reason)
+        if tx_detail && tx_detail['contractResult'] && !tx_detail['contractResult'].empty?
+          contract_result = tx_detail['contractResult'][0]
+          puts "🔍 DEBUG - contractResult: #{contract_result}" if ENV['DEBUG']
+
+          # Check if this is an Error(string) revert (starts with 08c379a0)
+          if contract_result && contract_result.start_with?('08c379a0')
+            begin
+              # ABI encoding for Error(string):
+              # - 4 bytes (8 hex chars): function selector (08c379a0)
+              # - 32 bytes (64 hex chars): offset to string data
+              # - 32 bytes (64 hex chars): length of string
+              # - N bytes: actual string data
+
+              # Skip selector (8 chars) and offset (64 chars)
+              data = contract_result[8 + 64..-1]
+
+              # Read length (next 64 chars)
+              length_hex = data[0...64]
+              length = length_hex.to_i(16)
+              puts "🔍 DEBUG - String length: #{length}" if ENV['DEBUG']
+
+              # Read string data (next length * 2 hex chars)
+              string_hex = data[64, length * 2]
+              puts "🔍 DEBUG - String hex: #{string_hex}" if ENV['DEBUG']
+
+              # Decode hex to UTF-8
+              error_message = [string_hex].pack('H*').force_encoding('UTF-8')
+              puts "🔍 DEBUG - Decoded error: #{error_message}" if ENV['DEBUG']
+
+              return error_message unless error_message.empty?
+            rescue => e
+              puts "🔍 DEBUG - Error decoding contractResult: #{e.message}" if ENV['DEBUG']
+              puts "🔍 DEBUG - Backtrace: #{e.backtrace.first(3).join("\n")}" if ENV['DEBUG']
+              # If decoding fails, fall through
+            end
+          end
+        end
+
+        # Try to get error from resMessage (hex-encoded error string)
+        if tx_detail && tx_detail['resMessage']
+          error_hex = tx_detail['resMessage']
+          puts "🔍 DEBUG - resMessage (hex): #{error_hex}" if ENV['DEBUG']
+
+          begin
+            # Decode hex to UTF-8 string
+            error_message = [error_hex].pack('H*').force_encoding('UTF-8')
+            # Clean up the message (remove null bytes and control characters)
+            error_message = error_message.gsub(/[\x00-\x1f\x7f]/, '').strip
+
+            puts "🔍 DEBUG - Decoded resMessage: #{error_message}" if ENV['DEBUG']
+            return error_message unless error_message.empty?
+          rescue => e
+            puts "🔍 DEBUG - Error decoding resMessage: #{e.message}" if ENV['DEBUG']
+            # If decoding fails, continue to try other methods
+          end
+        end
+
+        # Default to generic revert message
+        'REVERT opcode executed'
+      end
+
       private
 
       # Signs a transaction locally using the private key
@@ -104,8 +242,26 @@ module Tron
 
         # Check if the transaction was successful
         unless response['result']
-          error = response['Error'] || response['error'] || 'Unknown error'
-          raise "Transaction failed: #{error}"
+          error_message = response['Error'] || response['error'] || response['message'] || 'Unknown error'
+
+          # Build detailed error message
+          error_details = ["❌ Transaction broadcast failed: #{error_message}"]
+
+          # Add code if available
+          if response['code']
+            error_details << "   Error code: #{response['code']}"
+          end
+
+          # Add transaction ID if available
+          if response['txid'] || response['txID']
+            tx_id = response['txid'] || response['txID']
+            error_details << "   Transaction ID: #{tx_id}"
+          end
+
+          # Add full response for debugging
+          error_details << "   Full response: #{response.inspect}"
+
+          raise error_details.join("\n")
         end
 
         response

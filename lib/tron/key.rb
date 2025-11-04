@@ -146,6 +146,32 @@ module Tron
       sign(hashed_message)
     end
 
+    # Signs a typed data hash using TRON TIP-191 standard
+    # This is used for structured data signing (similar to EIP-712 but with TIP-191 prefix)
+    # The hash should be the keccak256 of the packed structured data
+    #
+    # @param hash [String] binary hash (32 bytes) of the structured data
+    # @return [String] signature as hexadecimal string with v value adjusted to 27/28
+    def sign_typed_data(hash)
+      # Add TRON TIP-191 prefix for 32-byte hashes
+      # Ref: https://github.com/tronprotocol/tips/blob/master/tip-191.md
+      prefix = "\x19Tron Signed Message:\n32"
+      prefixed_data = prefix.b + hash
+      prefixed_hash = Tron::Utils::Crypto.keccak256(prefixed_data)
+
+      # Sign the prefixed hash
+      context = Secp256k1::Context.new
+      compact, recovery_id = context.sign_recoverable(@private_key, prefixed_hash).compact
+      signature = compact.bytes
+
+      # Adjust v value to 27 or 28 (standard Ethereum/TRON signature format)
+      # Instead of recovery_id (0 or 1), use 27 + recovery_id
+      v = recovery_id + 27
+      signature << v
+
+      Tron::Utils::Crypto.bin_to_hex(signature.pack('c*'))
+    end
+
     # Verifies a signature against a data blob
     #
     # @param blob [String] the original signed data
