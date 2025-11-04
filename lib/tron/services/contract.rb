@@ -1,6 +1,5 @@
 require_relative '../utils/http'
 require_relative '../utils/address'
-require_relative '../utils/abi'
 require_relative '../abi'
 require_relative 'transaction'
 
@@ -86,7 +85,7 @@ module Tron
         endpoint = "#{@base_url}/wallet/triggerconstantcontract"
 
         # Encode function call
-        encoded_data = Utils::ABI.encode_function_call(function, parameters)
+        encoded_data = Abi.encode_function_call(function, parameters)
 
         # Use 'data' field instead of 'function_selector' (same as trigger_contract)
         payload = {
@@ -118,7 +117,7 @@ module Tron
           parameters: [operator_address, payment_id]
         )
 
-        Utils::ABI.decode_output('bool', result)
+        Abi.decode_output('bool', result)
       end
 
       # Gets the fee destination (example helper)
@@ -133,7 +132,7 @@ module Tron
           parameters: [operator_address]
         )
 
-        Utils::ABI.decode_output('address', result)
+        Abi.decode_output('address', result)
       end
 
       # Checks if an operator is registered (example helper)
@@ -148,7 +147,7 @@ module Tron
           parameters: [operator_address]
         )
 
-        Utils::ABI.decode_output('bool', result)
+        Abi.decode_output('bool', result)
       end
 
       private
@@ -173,7 +172,7 @@ module Tron
         endpoint = "#{@base_url}/wallet/triggersmartcontract"
 
         # Encode function call (selector + parameters)
-        encoded_data = Utils::ABI.encode_function_call(function, parameters)
+        encoded_data = Abi.encode_function_call(function, parameters)
 
         # IMPORTANT: Use 'data' field, not 'function_selector'
         # When function_selector is provided, the API expects it to be the signature string

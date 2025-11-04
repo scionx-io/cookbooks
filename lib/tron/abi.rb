@@ -77,6 +77,44 @@ module Tron
       Util.bin_to_hex(result_binary)
     end
 
+    # Encode a function call with signature and parameters
+    #
+    # @param signature [String] function signature like "transfer(address,uint256)"
+    # @param parameters [Array] parameter values
+    # @return [String] hex-encoded function call (selector + params)
+    def self.encode_function_call(signature, parameters = [])
+      # Parse function signature to get parameter types
+      match = signature.match(/^(\w+)\((.*)\)$/)
+      raise ArgumentError, "Invalid function signature: #{signature}" unless match
+
+      function_name = match[1]
+      param_types_str = match[2]
+      param_types = param_types_str.empty? ? [] : param_types_str.split(',').map(&:strip)
+
+      # Get function selector (first 4 bytes of keccak256 hash)
+      require_relative 'utils/crypto'
+      hash = Utils::Crypto.keccak256(signature)
+      selector = Utils::Crypto.bin_to_hex(hash[0, 4])
+
+      # Encode parameters if any
+      if parameters.empty?
+        return selector
+      end
+
+      encoded_params = encode(param_types, parameters)
+      selector + encoded_params
+    end
+
+    # Decode output from a contract call
+    #
+    # @param type_str [String] the output type
+    # @param hex_data [String] hex-encoded output data
+    # @return [Object] decoded value
+    def self.decode_output(type_str, hex_data)
+      decoded = decode([type_str], hex_data)
+      decoded.first
+    end
+
     # Convenience method for decoding
     def self.decode(types, hex_data)
       # Convert hex to binary at the boundary
