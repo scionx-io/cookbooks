@@ -26,14 +26,15 @@ module Tron
         ((x + 31) / 32).floor * 32
       end
 
-      # Pads an integer to 32 bytes in binary format
+      # Pads an integer to a specified number of bytes in binary format
       #
       # @param x [Integer] the integer to pad
+      # @param len [Integer] the number of bytes to pad to (default: 32)
       # @return [String] the padded integer as a binary string
-      def zpad_int(x)
+      def zpad_int(x, len = 32)
         # Ensure x is positive for modulo operation
-        x = x % (2 ** 256) if x >= 2 ** 256 || x < 0
-        [x.to_s(16).rjust(64, '0')].pack('H*')
+        x = x % (2 ** (8 * len)) if x >= 2 ** (8 * len) || x < 0
+        [x.to_s(16).rjust(len * 2, '0')].pack('H*')
       end
 
       # Pads a string to a specified length with null bytes
