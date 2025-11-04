@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2025-11-04
+
+### Fixed
+- **ABI Packed Encoder:** Added missing constants that were causing runtime errors
+  - Added `UINT_MAX`, `UINT_MIN`, `INT_MAX`, and `INT_MIN` constants to `Tron::Abi::Constant`
+  - Fixes 'uninitialized constant' error in packed encoder validation
+
 ## [1.2.1] - 2025-11-04
 
 ### Added
@@ -96,6 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resources service for checking bandwidth and energy
 - CLI tool for wallet balance checking
 
+[1.2.2]: https://github.com/yourusername/tron.rb/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/yourusername/tron.rb/compare/v1.1.2...v1.2.1
 [1.1.2]: https://github.com/yourusername/tron.rb/compare/v1.0.6...v1.1.2
 [1.0.6]: https://github.com/yourusername/tron.rb/compare/v1.0.5...v1.0.6
