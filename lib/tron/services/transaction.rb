@@ -30,6 +30,17 @@ module Tron
         broadcast_transaction(signed_tx)
       end
 
+      # Gets transaction information by transaction ID
+      #
+      # @param tx_id [String] the transaction ID (txID)
+      # @return [Hash] the transaction information from the blockchain
+      def get_transaction(tx_id)
+        endpoint = "#{@base_url}/wallet/gettransactionbyid"
+        payload = { value: tx_id }
+
+        Utils::HTTP.post(endpoint, payload)
+      end
+
       private
 
       # Signs a transaction locally using the private key

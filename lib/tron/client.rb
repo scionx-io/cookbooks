@@ -4,6 +4,7 @@ require_relative 'services/balance'
 require_relative 'services/resources'
 require_relative 'services/price'
 require_relative 'services/contract'
+require_relative 'services/transaction'
 
 module Tron
   # The main client class for interacting with the TRON blockchain
@@ -79,6 +80,13 @@ module Tron
     # @return [Tron::Services::Contract] the contract service
     def contract_service
       @contract_service ||= Services::Contract.new(@configuration)
+    end
+
+    # Returns the transaction service instance
+    #
+    # @return [Tron::Services::Transaction] the transaction service
+    def transaction_service
+      @transaction_service ||= Services::Transaction.new(@configuration)
     end
 
     # Get wallet balance information including TRX and TRC20 tokens
