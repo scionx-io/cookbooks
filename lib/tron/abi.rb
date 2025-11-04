@@ -113,7 +113,7 @@ module Tron
     def self.split_function_params(params_str)
       types = []
       depth = 0
-      current = ""
+      current = String.new
 
       params_str.each_char do |ch|
         case ch
@@ -126,7 +126,7 @@ module Tron
         when ","
           if depth.zero?
             types << current.strip
-            current = ""
+            current = String.new
           else
             current << ch
           end

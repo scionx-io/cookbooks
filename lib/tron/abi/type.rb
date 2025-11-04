@@ -233,24 +233,24 @@ module Tron
       def split_tuple_types(str)
         types = []
         depth = 0
-        current = ""
+        current = String.new
         str.each_char do |ch|
           case ch
           when "("
             depth += 1
-            current += ch
+            current << ch
           when ")"
             depth -= 1
-            current += ch
+            current << ch
           when ","
             if depth.zero?
               types << current
-              current = ""
+              current = String.new
             else
-              current += ch
+              current << ch
             end
           else
-            current += ch
+            current << ch
           end
         end
         types << current unless current.empty?
