@@ -22,6 +22,7 @@ module Tron
     require_relative 'abi/event'
     require_relative 'abi/util'
     require_relative 'abi/constant'
+    require_relative 'abi/packed'
     
     # For address handling functionality
     require_relative 'utils/address'
@@ -137,6 +138,21 @@ module Tron
 
       types << current.strip unless current.empty?
       types
+    end
+
+    # Encodes values using Solidity packed encoding (no padding to 32 bytes)
+    #
+    # @param types [Array<String>] array of type strings
+    # @param values [Array] array of values to encode
+    # @return [String] binary string of packed encoded values
+    def self.solidity_packed(types, values)
+      raise ArgumentError, "Types and values must be the same length" if types.length != values.length
+
+      packed = types.zip(values).map do |type, value|
+        Tron::Abi::Packed::Encoder.type(type, value)
+      end.join
+
+      packed.force_encoding(Encoding::ASCII_8BIT)
     end
 
     # Decode output from a contract call

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.9] - 2025-11-04
+
+### Added
+- **ABI Packed Encoding:** Added support for Solidity packed encoding (abi.encodePacked equivalent)
+  - Implemented `Tron::Abi.solidity_packed` method for packed encoding without 32-byte padding
+  - Created `Tron::Abi::Packed::Encoder` module for type-specific packed encoding
+  - Added proper file structure with `abi/packed/encoder.rb` and wrapper module
+  - Updated tuple encoding to use packed methodology for nested structures
+
+### Changed
+- **File Structure:** Refactored packed encoding module into proper directory structure
+  - Moved encoder functionality to `lib/tron/abi/packed/encoder.rb`
+  - Created wrapper module at `lib/tron/abi/packed.rb` 
+  - Maintained backward compatibility while improving organization
+
 ## [1.1.2] - 2025-10-28
 
 ### Fixed
@@ -81,6 +96,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resources service for checking bandwidth and energy
 - CLI tool for wallet balance checking
 
+[1.1.9]: https://github.com/yourusername/tron.rb/compare/v1.1.2...v1.1.9
+[1.1.2]: https://github.com/yourusername/tron.rb/compare/v1.0.6...v1.1.2
 [1.0.6]: https://github.com/yourusername/tron.rb/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/yourusername/tron.rb/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/yourusername/tron.rb/compare/v1.0.3...v1.0.4
