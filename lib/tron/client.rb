@@ -150,20 +150,29 @@ module Tron
 
       # Step 3: Process TRC20 tokens
       wallet_data[:trc20_tokens].each do |token|
+        # Handle tokens from TronGrid API that have raw_amount instead of balance
+        if token[:raw_amount] && !token[:balance]
+          # Skip tokens without metadata (caller must look them up)
+          next unless token[:decimals]
+
+          token[:balance] = token[:raw_amount] / (10.0 ** token[:decimals])
+        end
+
         next if token[:balance] <= 0 && !include_zero_balances
 
         # Get USD price for this token
-        price_usd = price_service.get_token_price_usd(token[:symbol].downcase)
+        price_usd = price_service.get_token_price_usd(token[:symbol]&.downcase || '')
         usd_value = price_usd ? (token[:balance] * price_usd) : nil
 
         tokens << {
-          symbol: token[:symbol],
-          name: token[:name],
+          symbol: token[:symbol] || 'UNKNOWN',
+          name: token[:name] || 'Unknown Token',
           token_balance: token[:balance],
           decimals: token[:decimals],
           address: token[:address],
           price_usd: price_usd,
-          usd_value: usd_value
+          usd_value: usd_value,
+          raw_amount: token[:raw_amount]  # Include for caller reference
         }
       end
 

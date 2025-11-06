@@ -92,6 +92,28 @@ module Tron
         # Rate limit before API call
         @rate_limiter.execute_request
 
+        # Use TronGrid API for Shasta (Tronscan is blocked by Cloudflare)
+        # Use Tronscan API for mainnet and nile (better token metadata)
+        if @config.network == :shasta
+          result = get_trc20_from_trongrid(address)
+        else
+          result = get_trc20_from_tronscan(address, strict)
+        end
+
+        # Cache the result
+        @cache.set(cache_key, result) if @config.cache_enabled
+
+        result
+      end
+
+      private
+
+      # Gets TRC20 tokens from Tronscan API
+      #
+      # @param address [String] the TRON address
+      # @param strict [Boolean] whether to enable strict validation
+      # @return [Array<Hash>] array of token information
+      def get_trc20_from_tronscan(address, strict)
         url = "#{@config.tronscan_base_url}/api/account/wallet?address=#{address}&asset_type=1"
         headers = tronscan_headers
 
@@ -102,7 +124,7 @@ module Tron
         raise "Missing 'data' field in TRC20 response" unless response.key?('data')
         raise "Invalid 'data' format in TRC20 response" unless response['data'].is_a?(Array)
 
-        result = response['data'].select { |token| token['token_type'] == 20 && token['balance'].to_f > 0 }
+        response['data'].select { |token| token['token_type'] == 20 && token['balance'].to_f > 0 }
           .map do |token|
             validate_token_data!(token)
             {
@@ -113,11 +135,48 @@ module Tron
               address: token['token_id']
             }
           end
+      end
 
-        # Cache the result
-        @cache.set(cache_key, result) if @config.cache_enabled
+      # Gets TRC20 tokens from TronGrid API (used for Shasta)
+      # Returns raw token data with amounts, caller must look up token details from database
+      #
+      # @param address [String] the TRON address
+      # @return [Array<Hash>] array of token information with raw amounts
+      def get_trc20_from_trongrid(address)
+        url = "#{@config.base_url}/v1/accounts/#{address}"
+        headers = api_headers
 
-        result
+        response = Utils::HTTP.get(url, headers)
+
+        # Validate response structure
+        raise "Unexpected API response format" unless response.is_a?(Hash)
+        raise "Missing 'data' field in response" unless response.key?('data')
+        raise "Invalid 'data' format in response" unless response['data'].is_a?(Array)
+
+        # Handle empty data array (new/inactive accounts)
+        return [] if response['data'].empty?
+
+        account_data = response['data'].first
+        raise "Invalid account data format" unless account_data.is_a?(Hash)
+
+        # Parse TRC20 tokens from account data
+        trc20_data = account_data.fetch('trc20', [])
+        return [] unless trc20_data.is_a?(Array)
+
+        trc20_data.flat_map do |token_hash|
+          # Each token_hash is like: {"TKnF3Ugr8FFPMLZyvLBJR4Di2fEH42amw3"=>"989550000000"}
+          token_hash.map do |token_address, raw_amount|
+            # Return raw data, let caller convert based on actual token decimals
+            {
+              symbol: nil,  # TronGrid doesn't provide symbol/name/decimals
+              name: nil,    # Caller must look these up from database
+              balance: nil, # Will be calculated by caller using correct decimals
+              raw_amount: raw_amount.to_i,  # Raw amount from API
+              decimals: nil,  # Caller must look up from database
+              address: token_address
+            }
+          end
+        end.select { |token| token[:raw_amount] > 0 }
       end
 
       # Gets cache statistics for the balance service
